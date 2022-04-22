@@ -219,6 +219,16 @@ s/^(ERROR:  child table is missing constraint "\w+)_([0-9])+"/\1_xxxxxx"/g
     }
 }
 
+# normalize for random waits in isolation_select_vs_all_on_mx
+# remove <waiting ...> lines only when followed by a CREATE INDEX CONCURRENTLY command
+# also remove when the step s2-coordinator-create-index-concurrently is completed
+/^ CREATE INDEX CONCURRENTLY select_table_index ON select_table\(id\);$/ {
+	N;P; /\w*<waiting ...>\w*/ {
+		s/.*//g
+	}
+}
+/step s2-coordinator-create-index-concurrently: <... completed>/d
+
 # normalize long table shard name errors for alter_table_set_access_method and alter_distributed_table
 s/^(ERROR:  child table is missing constraint "\w+)_([0-9])+"/\1_xxxxxx"/g
 s/^(DEBUG:  the name of the shard \(abcde_01234567890123456789012345678901234567890_f7ff6612)_([0-9])+/\1_xxxxxx/g
