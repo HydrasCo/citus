@@ -1,4 +1,4 @@
--- citus_internal.columnar_ensure_objects_exist is an internal helper function to create
+-- columnar.columnar_ensure_objects_exist is an internal helper function to create
 -- missing objects, anything related to the table access methods.
 -- Since the API for table access methods is only available in PG12 we can't create these
 -- objects when Citus is installed in PG11. Once citus is installed on PG11 the user can
@@ -6,7 +6,7 @@
 -- we couldn't create before.
 -- This internal function is called from `citus_finish_pg_upgrade` which the user is
 -- required to call after a PG major upgrade.
-CREATE OR REPLACE FUNCTION citus_internal.columnar_ensure_objects_exist()
+CREATE OR REPLACE FUNCTION columnar.columnar_ensure_objects_exist()
     RETURNS void
     LANGUAGE plpgsql
     SET search_path = pg_catalog
@@ -45,5 +45,5 @@ END IF;
 END;
 $ceoe$;
 
-COMMENT ON FUNCTION citus_internal.columnar_ensure_objects_exist()
+COMMENT ON FUNCTION columnar.columnar_ensure_objects_exist()
     IS 'internal function to be called by pg_catalog.citus_finish_pg_upgrade responsible for creating the columnar objects';
