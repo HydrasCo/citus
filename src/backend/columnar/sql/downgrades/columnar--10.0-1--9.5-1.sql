@@ -35,7 +35,7 @@ DROP TABLE stripe;
 DROP TABLE options;
 DROP SEQUENCE storageid_seq;
 
-DROP FUNCTION citus_internal.columnar_ensure_objects_exist();
+DROP FUNCTION columnar.columnar_ensure_objects_exist();
 
 RESET search_path;
 DROP SCHEMA columnar;
