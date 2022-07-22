@@ -1,5 +1,11 @@
 # Citus toplevel Makefile
 
+REPO ?= hydra/columnar
+TAG ?= latest
+.PHONY: docker_build
+docker_build:
+	docker build -t $(REPO):$(TAG) .
+
 citus_subdir = .
 citus_top_builddir = .
 extension_dir = $(shell $(PG_CONFIG) --sharedir)/extension
