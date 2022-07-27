@@ -7,7 +7,7 @@ RUN curl -sSf https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list
 RUN cat /etc/apt/sources.list.d/pgdg.list
 RUN apt-get update
-RUN apt-get install gcc make libssl-dev pkg-config postgresql-13 postgresql-server-dev-13 -y
+RUN apt-get install gcc make libssl-dev autoconf pkg-config postgresql-13 postgresql-server-dev-13 -y
 
 COPY . /citus
 
