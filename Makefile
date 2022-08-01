@@ -19,37 +19,27 @@ include Makefile.global
 
 all: extension
 
-
-# build columnar only
-columnar:
-	$(MAKE) -C src/backend/columnar all
 # build extension
-extension: $(citus_top_builddir)/src/include/citus_version.h columnar
-	$(MAKE) -C src/backend/distributed/ all
-install-columnar: columnar
+extension: $(citus_top_builddir)/src/include/citus_version.h
+	$(MAKE) -C src/backend/columnar all
+install-extension: extension
 	$(MAKE) -C src/backend/columnar install
-install-extension: extension install-columnar
-	$(MAKE) -C src/backend/distributed/ install
 install-headers: extension
-	$(MKDIR_P) '$(DESTDIR)$(includedir_server)/distributed/'
-# generated headers are located in the build directory
 	$(INSTALL_DATA) $(citus_top_builddir)/src/include/citus_version.h '$(DESTDIR)$(includedir_server)/'
-# the rest in the source tree
-	$(INSTALL_DATA) $(citus_abs_srcdir)/src/include/distributed/*.h '$(DESTDIR)$(includedir_server)/distributed/'
 
 clean-extension:
-	$(MAKE) -C src/backend/distributed/ clean
 	$(MAKE) -C src/backend/columnar/ clean
-clean-full:
-	$(MAKE) -C src/backend/distributed/ clean-full
-.PHONY: extension install-extension clean-extension clean-full
+
+.PHONY: extension install-extension clean-extension
+
 # Add to generic targets
 install: install-extension install-headers
+
 install-downgrades:
 	$(MAKE) -C src/backend/distributed/ install-downgrades
+	
 install-all: install-headers
 	$(MAKE) -C src/backend/columnar/ install-all
-	$(MAKE) -C src/backend/distributed/ install-all
 
 clean: clean-extension
 
