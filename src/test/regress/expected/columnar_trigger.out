@@ -50,33 +50,21 @@ ERROR:  Foreign keys and AFTER ROW triggers are not supported for columnar table
 HINT:  Consider an AFTER STATEMENT trigger instead.
 insert into test_tr values(1);
 NOTICE:  BEFORE STATEMENT INSERT
-CONTEXT:  PL/pgSQL function trs_before() line XX at RAISE
 NOTICE:  BEFORE ROW INSERT: (1)
-CONTEXT:  PL/pgSQL function trr_before() line XX at RAISE
 NOTICE:  AFTER STATEMENT INSERT
-CONTEXT:  PL/pgSQL function trs_after() line XX at RAISE
 NOTICE:    (1)
-CONTEXT:  PL/pgSQL function trs_after() line XX at RAISE
 insert into test_tr values(2),(3),(4);
 NOTICE:  BEFORE STATEMENT INSERT
-CONTEXT:  PL/pgSQL function trs_before() line XX at RAISE
 NOTICE:  BEFORE ROW INSERT: (2)
-CONTEXT:  PL/pgSQL function trr_before() line XX at RAISE
 NOTICE:  BEFORE ROW INSERT: (3)
-CONTEXT:  PL/pgSQL function trr_before() line XX at RAISE
 NOTICE:  BEFORE ROW INSERT: (4)
-CONTEXT:  PL/pgSQL function trr_before() line XX at RAISE
 NOTICE:  AFTER STATEMENT INSERT
-CONTEXT:  PL/pgSQL function trs_after() line XX at RAISE
 NOTICE:    (2)
-CONTEXT:  PL/pgSQL function trs_after() line XX at RAISE
 NOTICE:    (3)
-CONTEXT:  PL/pgSQL function trs_after() line XX at RAISE
 NOTICE:    (4)
-CONTEXT:  PL/pgSQL function trs_after() line XX at RAISE
 SELECT * FROM test_tr ORDER BY i;
- i
----------------------------------------------------------------------
+ i 
+---
  1
  2
  3
@@ -146,11 +134,11 @@ create trigger tr_after_stmt_erroring after insert on test_tr
 --
 insert into test_tr values(5);
 ERROR:  error
-CONTEXT:  PL/pgSQL function trs_after_erroring() line XX at RAISE
+CONTEXT:  PL/pgSQL function trs_after_erroring() line 4 at RAISE
 insert into test_tr values(6);
 SELECT * FROM test_tr ORDER BY i;
- i
----------------------------------------------------------------------
+ i 
+---
  6
 (1 row)
 
@@ -192,15 +180,15 @@ create trigger "user_value_by_day_INSERT" AFTER INSERT ON events
   FOR EACH STATEMENT EXECUTE FUNCTION user_value_by_day('events_trigger_target');
 COPY events FROM STDIN WITH (FORMAT 'csv');
 SELECT * FROM events ORDER BY user_id;
- user_id | event_id |           event_time            | value
----------------------------------------------------------------------
+ user_id | event_id |           event_time            | value 
+---------+----------+---------------------------------+-------
        1 |        1 | Wed Nov 04 15:54:02.226999 2020 |   1.1
        2 |        3 | Wed Nov 04 16:54:02.226999 2020 |   2.2
 (2 rows)
 
 SELECT * FROM events_trigger_target ORDER BY user_id;
- user_id | avg | __count__
----------------------------------------------------------------------
+ user_id | avg | __count__ 
+---------+-----+-----------
        1 | 0.1 |         1
        2 | 0.1 |         1
 (2 rows)

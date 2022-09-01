@@ -2,7 +2,7 @@
 -- Test different operations on empty columnar tables.
 --
 
-SET citus.compression to 'none';
+SET columnar.compression to 'none';
 create table t_uncompressed(a int) using columnar;
 create table t_compressed(a int) using columnar;
 
@@ -32,8 +32,8 @@ explain (costs off, summary off, timing off) select * from t_uncompressed;
 explain (costs off, summary off, timing off) select * from t_compressed;
 
 -- vacuum
-vacuum verbose t_compressed;
-vacuum verbose t_uncompressed;
+vacuum t_compressed;
+vacuum t_uncompressed;
 
 -- vacuum full
 vacuum full t_compressed;

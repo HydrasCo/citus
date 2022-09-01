@@ -8,17 +8,17 @@ BEGIN;
 ROLLBACK;
 INSERT INTO col_table_1 SELECT i FROM generate_series(1, 12) i;
 SELECT alter_columnar_table_set('col_table_1', stripe_row_limit => 1000);
- alter_columnar_table_set
----------------------------------------------------------------------
-
+ alter_columnar_table_set 
+--------------------------
+ 
 (1 row)
 
 INSERT INTO col_table_1 SELECT i FROM generate_series(1, 2350) i;
 SELECT row_count, first_row_number FROM columnar.stripe a
 WHERE a.storage_id = columnar_test_helpers.columnar_relation_storageid('col_table_1'::regclass)
 ORDER BY stripe_num;
- row_count | first_row_number
----------------------------------------------------------------------
+ row_count | first_row_number 
+-----------+------------------
         10 |                1
         12 |           300001
       1000 |           450001
@@ -31,8 +31,8 @@ VACUUM FULL col_table_1;
 SELECT row_count, first_row_number FROM columnar.stripe a
 WHERE a.storage_id = columnar_test_helpers.columnar_relation_storageid('col_table_1'::regclass)
 ORDER BY stripe_num;
- row_count | first_row_number
----------------------------------------------------------------------
+ row_count | first_row_number 
+-----------+------------------
       1000 |                1
       1000 |             1001
        372 |             2001
@@ -47,8 +47,8 @@ COMMIT;
 SELECT row_count, first_row_number FROM columnar.stripe a
 WHERE a.storage_id = columnar_test_helpers.columnar_relation_storageid('col_table_1'::regclass)
 ORDER BY stripe_num;
- row_count | first_row_number
----------------------------------------------------------------------
+ row_count | first_row_number 
+-----------+------------------
         32 |                1
 (1 row)
 

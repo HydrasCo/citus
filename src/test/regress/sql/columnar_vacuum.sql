@@ -83,7 +83,7 @@ SELECT pg_size_pretty(pg_relation_size('t'));
 COMMIT;
 
 -- vacuum should truncate the relation to the usable space
-VACUUM VERBOSE t;
+VACUUM t;
 SELECT pg_size_pretty(pg_relation_size('t'));
 SELECT count(*) FROM t;
 
@@ -106,7 +106,7 @@ ROLLBACK TO SAVEPOINT s2;
 INSERT INTO t SELECT i / 5 FROM generate_series(1, 1500) i;
 COMMIT;
 
-VACUUM VERBOSE t;
+VACUUM t;
 select
   version_major, version_minor, reserved_stripe_id, reserved_row_number
   from columnar_test_helpers.columnar_storage_info('t');
@@ -120,14 +120,14 @@ ALTER TABLE t ADD COLUMN c int;
 INSERT INTO t SELECT 1, i / 5 FROM generate_series(1, 1500) i;
 ALTER TABLE t DROP COLUMN c;
 
-VACUUM VERBOSE t;
+VACUUM t;
 
 -- vacuum full should remove chunks for dropped columns
 -- note that, a chunk will be stored in non-compressed for if compression
 -- doesn't reduce its size.
 SELECT alter_columnar_table_set('t', compression => 'pglz');
 VACUUM FULL t;
-VACUUM VERBOSE t;
+VACUUM t;
 
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
 
@@ -144,7 +144,7 @@ SET columnar.chunk_group_row_limit TO 100000;
 CREATE TABLE t(a int, b char, c text) USING columnar;
 INSERT INTO t SELECT 1, 'a', 'xyz' FROM generate_series(1, 1000000) i;
 
-VACUUM VERBOSE t;
+VACUUM t;
 
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
 

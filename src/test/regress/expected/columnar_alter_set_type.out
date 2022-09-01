@@ -14,8 +14,8 @@ WITH sample_data AS (VALUES
 INSERT INTO test_alter_table SELECT * FROM sample_data;
 ALTER TABLE test_alter_table ALTER COLUMN a TYPE jsonb USING row_to_json(row(a));
 SELECT * FROM test_alter_table ORDER BY a;
-     a      | b  | c
----------------------------------------------------------------------
+     a      | b  | c  
+------------+----+----
  {"f1": 1}  |  2 | 3
  {"f1": 4}  |  5 | 6
  {"f1": 5}  |  9 | 11
@@ -24,15 +24,15 @@ SELECT * FROM test_alter_table ORDER BY a;
 
 ALTER TABLE test_alter_table ALTER COLUMN c TYPE int USING c::integer;
 SELECT sum(c) FROM test_alter_table;
- sum
----------------------------------------------------------------------
+ sum 
+-----
  113
 (1 row)
 
 ALTER TABLE test_alter_table ALTER COLUMN b TYPE bigint;
 SELECT * FROM test_alter_table ORDER BY a;
-     a      | b  | c
----------------------------------------------------------------------
+     a      | b  | c  
+------------+----+----
  {"f1": 1}  |  2 |  3
  {"f1": 4}  |  5 |  6
  {"f1": 5}  |  9 | 11
@@ -41,8 +41,8 @@ SELECT * FROM test_alter_table ORDER BY a;
 
 ALTER TABLE test_alter_table ALTER COLUMN b TYPE float USING (b::float + 0.5);
 SELECT * FROM test_alter_table ORDER BY a;
-     a      |  b   | c
----------------------------------------------------------------------
+     a      |  b   | c  
+------------+------+----
  {"f1": 1}  |  2.5 |  3
  {"f1": 4}  |  5.5 |  6
  {"f1": 5}  |  9.5 | 11

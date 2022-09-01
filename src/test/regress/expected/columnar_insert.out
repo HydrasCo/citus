@@ -6,58 +6,58 @@ SET search_path TO columnar_insert;
 CREATE TABLE test_insert_command (a int) USING columnar;
 -- test single row inserts fail
 select count(*) from test_insert_command;
- count
----------------------------------------------------------------------
+ count 
+-------
      0
 (1 row)
 
 insert into test_insert_command values(1);
 select count(*) from test_insert_command;
- count
----------------------------------------------------------------------
+ count 
+-------
      1
 (1 row)
 
 insert into test_insert_command default values;
 select count(*) from test_insert_command;
- count
----------------------------------------------------------------------
+ count 
+-------
      2
 (1 row)
 
 -- test inserting from another table succeed
 CREATE TABLE test_insert_command_data (a int);
 select count(*) from test_insert_command_data;
- count
----------------------------------------------------------------------
+ count 
+-------
      0
 (1 row)
 
 insert into test_insert_command_data values(1);
 select count(*) from test_insert_command_data;
- count
----------------------------------------------------------------------
+ count 
+-------
      1
 (1 row)
 
 insert into test_insert_command select * from test_insert_command_data;
 select count(*) from test_insert_command;
- count
----------------------------------------------------------------------
+ count 
+-------
      3
 (1 row)
 
 select
   version_major, version_minor, reserved_stripe_id, reserved_row_number
   from columnar_test_helpers.columnar_storage_info('test_insert_command');
- version_major | version_minor | reserved_stripe_id | reserved_row_number
----------------------------------------------------------------------
+ version_major | version_minor | reserved_stripe_id | reserved_row_number 
+---------------+---------------+--------------------+---------------------
              2 |             0 |                  4 |              450001
 (1 row)
 
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
- consistent
----------------------------------------------------------------------
+ consistent 
+------------
  t
 (1 row)
 
@@ -78,8 +78,8 @@ USING columnar;
 -- store long text in columnar table
 INSERT INTO test_columnar_long_text SELECT * FROM test_long_text;
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
- consistent
----------------------------------------------------------------------
+ consistent 
+------------
  t
 (1 row)
 
@@ -90,8 +90,8 @@ DROP TABLE test_long_text;
 SELECT a.int_val
 FROM  test_long_text_hash a, test_columnar_long_text c
 WHERE a.int_val = c.int_val AND a.hash = md5(c.text_val);
- int_val
----------------------------------------------------------------------
+ int_val 
+---------
        1
        2
        3
@@ -111,6 +111,8 @@ CREATE TABLE test_logical_replication(i int) USING columnar;
 INSERT INTO test_logical_replication VALUES (1);
 CREATE PUBLICATION test_columnar_publication
   FOR TABLE test_logical_replication;
+WARNING:  wal_level is insufficient to publish logical changes
+HINT:  Set wal_level to logical before creating subscriptions.
 -- should fail; columnar does not support logical replication
 INSERT INTO test_logical_replication VALUES (2);
 ERROR:  cannot insert into columnar table that is a part of a publication
@@ -133,8 +135,8 @@ SELECT
   pg_column_size(plain), pg_column_size(main),
   pg_column_size(external), pg_column_size(extended)
 FROM test_toast_row;
- pg_column_size | pg_column_size | pg_column_size | pg_column_size
----------------------------------------------------------------------
+ pg_column_size | pg_column_size | pg_column_size | pg_column_size 
+----------------+----------------+----------------+----------------
            5004 |             69 |           5000 |             65
 (1 row)
 
@@ -146,22 +148,22 @@ SELECT
   pg_column_size(plain), pg_column_size(main),
   pg_column_size(external), pg_column_size(extended)
 FROM test_toast_columnar;
- pg_column_size | pg_column_size | pg_column_size | pg_column_size
----------------------------------------------------------------------
+ pg_column_size | pg_column_size | pg_column_size | pg_column_size 
+----------------+----------------+----------------+----------------
            5004 |           5004 |           5004 |           5004
 (1 row)
 
 select
   version_major, version_minor, reserved_stripe_id, reserved_row_number
   from columnar_test_helpers.columnar_storage_info('test_toast_columnar');
- version_major | version_minor | reserved_stripe_id | reserved_row_number
----------------------------------------------------------------------
+ version_major | version_minor | reserved_stripe_id | reserved_row_number 
+---------------+---------------+--------------------+---------------------
              2 |             0 |                  2 |              150001
 (1 row)
 
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
- consistent
----------------------------------------------------------------------
+ consistent 
+------------
  t
 (1 row)
 
@@ -172,9 +174,9 @@ DROP TABLE test_toast_columnar;
 -- We test that metadata makes sense so we can fix the read path in future.
 CREATE TABLE zero_col() USING columnar;
 SELECT alter_columnar_table_set('zero_col', chunk_group_row_limit => 1000);
- alter_columnar_table_set
----------------------------------------------------------------------
-
+ alter_columnar_table_set 
+--------------------------
+ 
 (1 row)
 
 INSERT INTO zero_col DEFAULT VALUES;
@@ -194,16 +196,16 @@ INSERT INTO zero_col SELECT * FROM zero_col_heap;
 select
   version_major, version_minor, reserved_stripe_id, reserved_row_number
   from columnar_test_helpers.columnar_storage_info('zero_col');
- version_major | version_minor | reserved_stripe_id | reserved_row_number
----------------------------------------------------------------------
+ version_major | version_minor | reserved_stripe_id | reserved_row_number 
+---------------+---------------+--------------------+---------------------
              2 |             0 |                  6 |              750001
 (1 row)
 
 SELECT relname, stripe_num, chunk_group_count, row_count FROM columnar.stripe a, pg_class b
 WHERE columnar_test_helpers.columnar_relation_storageid(b.oid)=a.storage_id AND relname = 'zero_col'
 ORDER BY 1,2,3,4;
- relname  | stripe_num | chunk_group_count | row_count
----------------------------------------------------------------------
+ relname  | stripe_num | chunk_group_count | row_count 
+----------+------------+-------------------+-----------
  zero_col |          1 |                 1 |         1
  zero_col |          2 |                 1 |         1
  zero_col |          3 |                 1 |         1
@@ -214,15 +216,15 @@ ORDER BY 1,2,3,4;
 SELECT relname, stripe_num, value_count FROM columnar.chunk a, pg_class b
 WHERE columnar_test_helpers.columnar_relation_storageid(b.oid)=a.storage_id AND relname = 'zero_col'
 ORDER BY 1,2,3;
- relname | stripe_num | value_count
----------------------------------------------------------------------
+ relname | stripe_num | value_count 
+---------+------------+-------------
 (0 rows)
 
 SELECT relname, stripe_num, chunk_group_num, row_count FROM columnar.chunk_group a, pg_class b
 WHERE columnar_test_helpers.columnar_relation_storageid(b.oid)=a.storage_id AND relname = 'zero_col'
 ORDER BY 1,2,3,4;
- relname  | stripe_num | chunk_group_num | row_count
----------------------------------------------------------------------
+ relname  | stripe_num | chunk_group_num | row_count 
+----------+------------+-----------------+-----------
  zero_col |          1 |               0 |         1
  zero_col |          2 |               0 |         1
  zero_col |          3 |               0 |         1
@@ -232,17 +234,17 @@ ORDER BY 1,2,3,4;
 
 CREATE TABLE selfinsert(x int) USING columnar;
 SELECT alter_columnar_table_set('selfinsert', stripe_row_limit => 1000);
- alter_columnar_table_set
----------------------------------------------------------------------
-
+ alter_columnar_table_set 
+--------------------------
+ 
 (1 row)
 
 BEGIN;
   INSERT INTO selfinsert SELECT generate_series(1,1010);
   INSERT INTO selfinsert SELECT * FROM selfinsert;
   SELECT SUM(x)=1021110 FROM selfinsert;
- ?column?
----------------------------------------------------------------------
+ ?column? 
+----------
  t
 (1 row)
 
@@ -251,8 +253,8 @@ BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
   INSERT INTO selfinsert SELECT generate_series(1,1010);
   INSERT INTO selfinsert SELECT * FROM selfinsert;
   SELECT SUM(x)=1021110 FROM selfinsert;
- ?column?
----------------------------------------------------------------------
+ ?column? 
+----------
  t
 (1 row)
 
@@ -260,8 +262,8 @@ ROLLBACK;
 INSERT INTO selfinsert SELECT generate_series(1,1010);
 INSERT INTO selfinsert SELECT * FROM selfinsert;
 SELECT SUM(x)=1021110 FROM selfinsert;
- ?column?
----------------------------------------------------------------------
+ ?column? 
+----------
  t
 (1 row)
 
@@ -272,8 +274,8 @@ ERROR:  duplicate key value violates unique constraint "selfconflict_pkey"
 DETAIL:  Key (f1)=(2) already exists.
 COMMIT;
 SELECT COUNT(*)=0 FROM selfconflict;
- ?column?
----------------------------------------------------------------------
+ ?column? 
+----------
  t
 (1 row)
 
@@ -285,19 +287,19 @@ BEGIN;
   SET enable_indexscan TO ON;
   CREATE INDEX ON flush_create_index(a);
   SELECT a FROM flush_create_index WHERE a=5;
- a
----------------------------------------------------------------------
+ a 
+---
  5
 (1 row)
 
 ROLLBACK;
 CREATE OR REPLACE FUNCTION test_columnar_storage_write_new_page(relation regclass) RETURNS void
-STRICT LANGUAGE c AS 'citus', 'test_columnar_storage_write_new_page';
+STRICT LANGUAGE c AS 'columnar', 'test_columnar_storage_write_new_page';
 CREATE TABLE aborted_write (a int, b int) USING columnar;
 SELECT test_columnar_storage_write_new_page('aborted_write');
- test_columnar_storage_write_new_page
----------------------------------------------------------------------
-
+ test_columnar_storage_write_new_page 
+--------------------------------------
+ 
 (1 row)
 
 SET client_min_messages TO DEBUG4;

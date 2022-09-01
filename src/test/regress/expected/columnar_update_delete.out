@@ -47,8 +47,8 @@ INSERT INTO parent VALUES('2020-03-21', 31, 301, 'three thousand and one'); -- r
 INSERT INTO parent VALUES('2020-03-22', 32, 302, 'three thousand and two'); -- row
 INSERT INTO parent VALUES('2020-03-23', 33, 303, 'three thousand and three'); -- row
 SELECT * FROM parent;
-              ts              | i  |  n  |            s
----------------------------------------------------------------------
+              ts              | i  |  n  |            s             
+------------------------------+----+-----+--------------------------
  Wed Jan 15 00:00:00 2020 PST | 10 | 100 | one thousand
  Sat Feb 15 00:00:00 2020 PST | 20 | 200 | two thousand
  Sun Mar 15 00:00:00 2020 PDT | 30 | 300 | three thousand
@@ -82,8 +82,8 @@ ERROR:  UPDATE and CTID scans not supported for ColumnarScan
 DELETE FROM parent WHERE n = 303;
 ERROR:  UPDATE and CTID scans not supported for ColumnarScan
 SELECT * FROM parent;
-              ts              | i  |  n  |            s
----------------------------------------------------------------------
+              ts              | i  |  n  |            s             
+------------------------------+----+-----+--------------------------
  Wed Jan 15 00:00:00 2020 PST | 10 | 100 | one thousand
  Sat Feb 15 00:00:00 2020 PST | 20 | 200 | two thousand
  Mon Mar 23 00:00:00 2020 PDT | 33 | 303 | three thousand and three

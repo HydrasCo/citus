@@ -44,6 +44,7 @@ lib*.pc
 
 # vscode
 .vscode/*
+.ccls
 
 # output from diff normalization that shouldn't be commited
 *.unmodified

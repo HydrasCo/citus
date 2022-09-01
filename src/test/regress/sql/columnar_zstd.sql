@@ -23,13 +23,18 @@ SELECT DISTINCT * FROM test_zstd ORDER BY a, b, c LIMIT 5;
 
 VACUUM FULL test_zstd;
 
-SELECT pg_relation_size('test_zstd') AS size_comp_level_default \gset
+-- Hydra: we need to get `data_length` from stripe metadata information to compare compression
+-- rather than calling pg_relation_size function
+
+SELECT data_length AS size_comp_level_default FROM columnar.stripe WHERE storage_id = (
+    SELECT storage_id from columnar_test_helpers.columnar_storage_info('test_zstd')) \gset
 
 -- change compression level
 SELECT alter_columnar_table_set('test_zstd', compression_level => 19);
 VACUUM FULL test_zstd;
 
-SELECT pg_relation_size('test_zstd') AS size_comp_level_19 \gset
+SELECT data_length AS size_comp_level_19 FROM columnar.stripe WHERE storage_id = (
+    SELECT storage_id from columnar_test_helpers.columnar_storage_info('test_zstd')) \gset
 
 -- verify that higher compression level compressed better
 SELECT :size_comp_level_default > :size_comp_level_19 AS size_changed;

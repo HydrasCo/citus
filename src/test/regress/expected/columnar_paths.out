@@ -11,8 +11,8 @@ $$
 SELECT a FROM full_correlated WHERE a=200;
 $$
 );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -21,8 +21,8 @@ $$
 SELECT a FROM full_correlated WHERE a<0;
 $$
 );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -31,8 +31,8 @@ $$
 SELECT a FROM full_correlated WHERE a>10 AND a<20;
 $$
 );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -41,8 +41,8 @@ $$
 SELECT a FROM full_correlated WHERE a>1000000;
 $$
 );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -51,8 +51,8 @@ $$
 SELECT a FROM full_correlated WHERE a>900000;
 $$
 );
- uses_custom_scan
----------------------------------------------------------------------
+ uses_custom_scan 
+------------------
  t
 (1 row)
 
@@ -63,8 +63,8 @@ BEGIN;
   SELECT a FROM full_correlated WHERE a>900000;
   $$
   );
- uses_seq_scan
----------------------------------------------------------------------
+ uses_seq_scan 
+---------------
  t
 (1 row)
 
@@ -74,8 +74,8 @@ $$
 SELECT a FROM full_correlated WHERE a<1000;
 $$
 );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -84,8 +84,8 @@ $$
 SELECT a,b FROM full_correlated WHERE a<3000;
 $$
 );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -94,8 +94,8 @@ $$
 SELECT a FROM full_correlated WHERE a<9000;
 $$
 );
- uses_custom_scan
----------------------------------------------------------------------
+ uses_custom_scan 
+------------------
  t
 (1 row)
 
@@ -106,8 +106,8 @@ BEGIN;
   SELECT a FROM full_correlated WHERE a<9000;
   $$
   );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -122,8 +122,8 @@ BEGIN;
   SELECT a FROM full_correlated WHERE a=200;
   $$
   );
- uses_custom_scan
----------------------------------------------------------------------
+ uses_custom_scan 
+------------------
  t
 (1 row)
 
@@ -133,8 +133,8 @@ BEGIN;
   SELECT a FROM full_correlated WHERE a=200;
   $$
   );
- uses_seq_scan
----------------------------------------------------------------------
+ uses_seq_scan 
+---------------
  t
 (1 row)
 
@@ -146,8 +146,8 @@ $$
 SELECT a,b,c,d FROM full_correlated WHERE a<9000;
 $$
 );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -158,8 +158,8 @@ BEGIN;
   SELECT a,b,c,d FROM full_correlated WHERE a<9000;
   $$
   );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -171,8 +171,8 @@ $$
 SELECT c FROM full_correlated WHERE a<10000;
 $$
 );
- uses_custom_scan
----------------------------------------------------------------------
+ uses_custom_scan 
+------------------
  t
 (1 row)
 
@@ -183,8 +183,8 @@ BEGIN;
   SELECT c FROM full_correlated WHERE a<10000;
   $$
   );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -194,8 +194,8 @@ $$
 SELECT a FROM full_correlated WHERE a>200;
 $$
 );
- uses_custom_scan
----------------------------------------------------------------------
+ uses_custom_scan 
+------------------
  t
 (1 row)
 
@@ -204,8 +204,8 @@ $$
 SELECT a FROM full_correlated WHERE a=0 OR a=5;
 $$
 );
- uses_custom_scan
----------------------------------------------------------------------
+ uses_custom_scan 
+------------------
  t
 (1 row)
 
@@ -216,8 +216,8 @@ BEGIN;
   SELECT a FROM full_correlated WHERE a=0 OR a=5;
   $$
   );
- uses_seq_scan
----------------------------------------------------------------------
+ uses_seq_scan 
+---------------
  t
 (1 row)
 
@@ -237,8 +237,8 @@ LEFT JOIN full_correlated AS ct_1 ON ht_1.a=ct_1.d
 LEFT JOIN heap_table AS ht_2 ON ht_2.a=ct_1.c
 JOIN cte ON cte.d=ht_1.a
 WHERE ct_1.a < 3000;
-                                          QUERY PLAN
----------------------------------------------------------------------
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
  Aggregate
    CTE cte
      ->  Custom Scan (ColumnarScan) on full_correlated
@@ -269,8 +269,8 @@ BEGIN;
   LEFT JOIN heap_table AS ht_2 ON ht_2.a=ct_1.c
   JOIN cte ON cte.d=ht_1.a
   WHERE ct_1.a < 3000;
-                                          QUERY PLAN
----------------------------------------------------------------------
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
  Aggregate
    CTE cte
      ->  Seq Scan on full_correlated
@@ -294,8 +294,8 @@ ROLLBACK;
 EXPLAIN (COSTS OFF) WITH w AS (SELECT * FROM full_correlated)
 SELECT * FROM w AS w1 JOIN w AS w2 ON w1.a = w2.d
 WHERE w2.a = 123;
-                      QUERY PLAN
----------------------------------------------------------------------
+                      QUERY PLAN                       
+-------------------------------------------------------
  Merge Join
    Merge Cond: (w2.d = w1.a)
    CTE w
@@ -315,8 +315,8 @@ WHERE w2.a = 123;
 EXPLAIN (COSTS OFF) WITH w AS NOT MATERIALIZED (SELECT * FROM full_correlated)
 SELECT * FROM w AS w1 JOIN w AS w2 ON w1.a = w2.d
 WHERE w2.a = 123;
-                                    QUERY PLAN
----------------------------------------------------------------------
+                                    QUERY PLAN                                     
+-----------------------------------------------------------------------------------
  Nested Loop
    ->  Index Scan using full_correlated_btree on full_correlated full_correlated_1
          Index Cond: (a = 123)
@@ -332,8 +332,8 @@ FROM
 WHERE sub_2.a < sub_1.b::integer
 ORDER BY 3 DESC, 2 DESC, 1 DESC
 LIMIT 100;
-                                                                                                QUERY PLAN
----------------------------------------------------------------------
+                                                                                                QUERY PLAN                                                                                                 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Limit
    ->  Sort
          Sort Key: sub_3.avg DESC, full_correlated_1.a DESC, full_correlated.b DESC
@@ -376,8 +376,8 @@ $$
 SELECT a FROM full_correlated WHERE a<10;
 $$
 );
- uses_custom_scan
----------------------------------------------------------------------
+ uses_custom_scan 
+------------------
  t
 (1 row)
 
@@ -386,8 +386,8 @@ $$
 SELECT a FROM full_correlated WHERE a>1 AND a<10;
 $$
 );
- uses_custom_scan
----------------------------------------------------------------------
+ uses_custom_scan 
+------------------
  t
 (1 row)
 
@@ -396,8 +396,8 @@ $$
 SELECT a FROM full_correlated WHERE a=0 OR a=5;
 $$
 );
- uses_custom_scan
----------------------------------------------------------------------
+ uses_custom_scan 
+------------------
  t
 (1 row)
 
@@ -406,8 +406,8 @@ $$
 SELECT a FROM full_correlated WHERE a=1000;
 $$
 );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -416,8 +416,8 @@ $$
 SELECT a,c FROM full_correlated WHERE a=1000;
 $$
 );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -428,8 +428,8 @@ BEGIN;
   SELECT a,c FROM full_correlated WHERE a=1000;
   $$
   );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -443,8 +443,8 @@ $$
 SELECT a FROM full_anti_correlated WHERE b='600';
 $$
 );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -453,8 +453,8 @@ $$
 SELECT a,b FROM full_anti_correlated WHERE b='600';
 $$
 );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -463,8 +463,8 @@ $$
 SELECT a,b FROM full_anti_correlated WHERE b='600' OR b='10';
 $$
 );
- uses_custom_scan
----------------------------------------------------------------------
+ uses_custom_scan 
+------------------
  t
 (1 row)
 
@@ -475,8 +475,8 @@ BEGIN;
   SELECT a,b FROM full_anti_correlated WHERE b='600' OR b='10';
   $$
   );
- uses_seq_scan
----------------------------------------------------------------------
+ uses_seq_scan 
+---------------
  t
 (1 row)
 
@@ -489,8 +489,8 @@ $$
 SELECT a FROM full_anti_correlated WHERE a>6500 AND a<7000 AND b<'10000';
 $$
 );
- uses_index_scan
----------------------------------------------------------------------
+ uses_index_scan 
+-----------------
  t
 (1 row)
 
@@ -499,8 +499,8 @@ $$
 SELECT a FROM full_anti_correlated WHERE a>2000 AND a<7000;
 $$
 );
- uses_custom_scan
----------------------------------------------------------------------
+ uses_custom_scan 
+------------------
  t
 (1 row)
 
@@ -509,8 +509,8 @@ $$
 SELECT a FROM full_anti_correlated WHERE a<7000 AND b<'10000';
 $$
 );
- uses_custom_scan
----------------------------------------------------------------------
+ uses_custom_scan 
+------------------
  t
 (1 row)
 
@@ -521,8 +521,8 @@ BEGIN;
   SELECT a FROM full_anti_correlated WHERE a<7000 AND b<'10000';
   $$
   );
- uses_seq_scan
----------------------------------------------------------------------
+ uses_seq_scan 
+---------------
  t
 (1 row)
 
@@ -536,8 +536,8 @@ $$
 SELECT a FROM no_correlation WHERE a < 2;
 $$
 );
- uses_custom_scan
----------------------------------------------------------------------
+ uses_custom_scan 
+------------------
  t
 (1 row)
 
@@ -546,8 +546,8 @@ $$
 SELECT a FROM no_correlation WHERE a = 200;
 $$
 );
- uses_custom_scan
----------------------------------------------------------------------
+ uses_custom_scan 
+------------------
  t
 (1 row)
 
@@ -558,8 +558,8 @@ BEGIN;
   SELECT a FROM no_correlation WHERE a = 200;
   $$
   );
- uses_seq_scan
----------------------------------------------------------------------
+ uses_seq_scan 
+---------------
  t
 (1 row)
 
@@ -581,8 +581,8 @@ ANALYZE correlated, uncorrelated;
 -- should choose chunk group filtering; selective and correlated
 EXPLAIN (analyze on, costs off, timing off, summary off)
 SELECT * FROM correlated WHERE x = 78910;
-                            QUERY PLAN
----------------------------------------------------------------------
+                            QUERY PLAN                            
+------------------------------------------------------------------
  Custom Scan (ColumnarScan) on correlated (actual rows=1 loops=1)
    Filter: (x = 78910)
    Rows Removed by Filter: 999
@@ -592,23 +592,23 @@ SELECT * FROM correlated WHERE x = 78910;
 (6 rows)
 
 SELECT * FROM correlated WHERE x = 78910;
-   x
----------------------------------------------------------------------
+   x   
+-------
  78910
 (1 row)
 
 -- should choose index scan; selective but uncorrelated
 EXPLAIN (analyze on, costs off, timing off, summary off)
 SELECT * FROM uncorrelated WHERE x = 78910;
-                                QUERY PLAN
----------------------------------------------------------------------
+                                QUERY PLAN                                 
+---------------------------------------------------------------------------
  Index Scan using uncorrelated_idx on uncorrelated (actual rows=1 loops=1)
    Index Cond: (x = 78910)
 (2 rows)
 
 SELECT * FROM uncorrelated WHERE x = 78910;
-   x
----------------------------------------------------------------------
+   x   
+-------
  78910
 (1 row)
 

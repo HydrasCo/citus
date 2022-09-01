@@ -73,6 +73,8 @@ INSERT INTO t
  SELECT i, 'last batch', 0 /* no need to record memusage per row */
  FROM generate_series(1, 50000) i;
 
+SELECT 1.0 * TopMemoryContext / :top_post FROM columnar_test_helpers.columnar_store_memory_stats();
+
 SELECT 1.0 * TopMemoryContext / :top_post BETWEEN 0.98 AND 1.02 AS top_growth_ok
 FROM columnar_test_helpers.columnar_store_memory_stats();
 

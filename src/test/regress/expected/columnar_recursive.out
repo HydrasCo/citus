@@ -15,15 +15,15 @@ SELECT relname, count(*) FROM columnar.stripe a, pg_class b
 WHERE columnar_test_helpers.columnar_relation_storageid(b.oid)=a.storage_id AND relname IN ('t1', 't2')
 GROUP BY relname
 ORDER BY relname;
- relname | count
----------------------------------------------------------------------
+ relname | count 
+---------+-------
  t1      |     1
  t2      |     1
 (2 rows)
 
 SELECT * FROM t1 ORDER BY a;
- a | b
----------------------------------------------------------------------
+ a | b  
+---+----
  1 |  2
  2 |  4
  3 |  6
@@ -32,8 +32,8 @@ SELECT * FROM t1 ORDER BY a;
 (5 rows)
 
 SELECT * FROM t2 ORDER BY a;
- a | b
----------------------------------------------------------------------
+ a | b 
+---+---
  1 | 1
  2 | 3
  3 | 5
@@ -53,8 +53,8 @@ WITH t AS (
 )
 INSERT INTO t2 SELECT t.a, t.a+1 FROM t;
 SELECT * FROM t1;
- a | b
----------------------------------------------------------------------
+ a | b  
+---+----
  1 |  2
  2 |  4
  3 |  6
@@ -63,8 +63,8 @@ SELECT * FROM t1;
 (5 rows)
 
 SELECT * FROM t2;
- a | b
----------------------------------------------------------------------
+ a | b 
+---+---
  1 | 2
  2 | 3
  3 | 4
@@ -73,8 +73,8 @@ SELECT * FROM t2;
 (5 rows)
 
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
- consistent
----------------------------------------------------------------------
+ consistent 
+------------
  t
 (1 row)
 
@@ -90,8 +90,8 @@ WITH t AS (
 )
 INSERT INTO t2 SELECT i, (select count(*) from t1) FROM generate_series(1, 3) i;
 SELECT * FROM t1;
- a | b
----------------------------------------------------------------------
+ a | b  
+---+----
  1 |  2
  2 |  4
  3 |  6
@@ -100,16 +100,16 @@ SELECT * FROM t1;
 (5 rows)
 
 SELECT * FROM t2;
- a | b
----------------------------------------------------------------------
+ a | b 
+---+---
  1 | 0
  2 | 0
  3 | 0
 (3 rows)
 
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
- consistent
----------------------------------------------------------------------
+ consistent 
+------------
  t
 (1 row)
 
@@ -123,8 +123,8 @@ WITH t AS (
 )
 INSERT INTO t1 SELECT t.a, t.a+1 FROM t;
 SELECT * FROM t1 ORDER BY a, b;
- a | b
----------------------------------------------------------------------
+ a | b  
+---+----
  1 |  2
  1 |  2
  2 |  3
@@ -138,8 +138,8 @@ SELECT * FROM t1 ORDER BY a, b;
 (10 rows)
 
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
- consistent
----------------------------------------------------------------------
+ consistent 
+------------
  t
 (1 row)
 
@@ -164,18 +164,18 @@ INSERT INTO t2 SELECT i, g(i) FROM generate_series(1, 5) i;
 INSERT INTO t4 SELECT i, g2(i) FROM generate_series(1, 5) i;
 -- check that t1==t3 and t2==t4.
 ((table t1) except (table t3)) union ((table t3) except (table t1));
- a | b
----------------------------------------------------------------------
+ a | b 
+---+---
 (0 rows)
 
 ((table t2) except (table t4)) union ((table t4) except (table t2));
- a | b
----------------------------------------------------------------------
+ a | b 
+---+---
 (0 rows)
 
 SELECT * FROM t2 ORDER BY a, b;
- a | b
----------------------------------------------------------------------
+ a | b 
+---+---
  1 | 1
  2 | 2
  3 | 3
@@ -184,8 +184,8 @@ SELECT * FROM t2 ORDER BY a, b;
 (5 rows)
 
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
- consistent
----------------------------------------------------------------------
+ consistent 
+------------
  t
 (1 row)
 
@@ -196,8 +196,8 @@ TRUNCATE t1, t2, t3, t4;
 INSERT INTO t1 SELECT i, g(i) FROM generate_series(1, 3) i;
 INSERT INTO t3 SELECT i, g2(i) FROM generate_series(1, 3) i;
 SELECT * FROM t1 ORDER BY a, b;
- a | b
----------------------------------------------------------------------
+ a | b 
+---+---
  1 | 1
  1 | 2
  2 | 3
@@ -207,8 +207,8 @@ SELECT * FROM t1 ORDER BY a, b;
 (6 rows)
 
 SELECT * FROM t3 ORDER BY a, b;
- a | b
----------------------------------------------------------------------
+ a | b 
+---+---
  1 | 1
  1 | 2
  2 | 3
@@ -219,18 +219,18 @@ SELECT * FROM t3 ORDER BY a, b;
 
 -- check that t1==t3 and t2==t4.
 ((table t1) except (table t3)) union ((table t3) except (table t1));
- a | b
----------------------------------------------------------------------
+ a | b 
+---+---
 (0 rows)
 
 ((table t2) except (table t4)) union ((table t4) except (table t2));
- a | b
----------------------------------------------------------------------
+ a | b 
+---+---
 (0 rows)
 
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
- consistent
----------------------------------------------------------------------
+ consistent 
+------------
  t
 (1 row)
 
@@ -252,20 +252,20 @@ EXCEPTION WHEN division_by_zero THEN
 END;
 $$ LANGUAGE plpgsql;
 SELECT f(10);
- f
----------------------------------------------------------------------
-
+ f 
+---
+ 
 (1 row)
 
 SELECT f(0), f(20);
- f | f
----------------------------------------------------------------------
-   |
+ f | f 
+---+---
+   | 
 (1 row)
 
 SELECT * FROM t1 ORDER BY a, b;
- a  | b
----------------------------------------------------------------------
+ a  | b  
+----+----
   2 |  3
   3 |  4
  10 | 11
@@ -279,8 +279,8 @@ SELECT * FROM t1 ORDER BY a, b;
 (10 rows)
 
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
- consistent
----------------------------------------------------------------------
+ consistent 
+------------
  t
 (1 row)
 
