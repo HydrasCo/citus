@@ -24,9 +24,16 @@
 PG_MODULE_MAGIC;
 
 void _PG_init(void);
+void _PG_fini(void);
 
 void
 _PG_init(void)
 {
 	columnar_init();
+}
+
+void 
+_PG_fini(void)
+{
+	columnar_fini();
 }

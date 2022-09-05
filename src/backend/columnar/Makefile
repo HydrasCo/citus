@@ -1,7 +1,7 @@
 citus_subdir = src/backend/columnar
 citus_top_builddir = ../../..
 safestringlib_srcdir = $(citus_abs_top_srcdir)/vendor/safestringlib
-SUBDIRS = . safeclib
+SUBDIRS = . safeclib vectorization vectorization/vtype
 SUBDIRS +=
 ENSURE_SUBDIRS_EXIST := $(shell mkdir -p $(SUBDIRS))
 OBJS += \
@@ -9,6 +9,7 @@ OBJS += \
 
 MODULE_big = columnar
 PG_CPPFLAGS += -I$(libpq_srcdir) -I$(safestringlib_srcdir)/include
+#PG_CPPFLAGS += -mavx2 -DSIMD
 EXTENSION = columnar
 
 template_sql_files = $(patsubst $(citus_abs_srcdir)/%,%,$(wildcard $(citus_abs_srcdir)/sql/*.sql))

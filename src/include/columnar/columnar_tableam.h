@@ -50,6 +50,7 @@ typedef struct ColumnarScanDescData *ColumnarScanDesc;
 
 const TableAmRoutine * GetColumnarTableAmRoutine(void);
 extern void columnar_tableam_init(void);
+extern void columnar_tableam_fini(void);
 extern TableScanDesc columnar_beginscan_extended(Relation relation, Snapshot snapshot,
 												 int nkeys, ScanKey key,
 												 ParallelTableScanDesc parallel_scan,
@@ -58,6 +59,13 @@ extern TableScanDesc columnar_beginscan_extended(Relation relation, Snapshot sna
 extern int64 ColumnarScanChunkGroupsFiltered(ColumnarScanDesc columnarScanDesc);
 extern bool ColumnarSupportsIndexAM(char *indexAMName);
 extern bool IsColumnarTableAmTable(Oid relationId);
+
+/* Vectorization */ 
+
+extern bool columnar_getnextvector(TableScanDesc sscan, 
+								   ScanDirection direction, 
+								   TupleTableSlot *slot, 
+								   int size);
 
 
 #endif /* COLUMNAR_TABLEAM_H */

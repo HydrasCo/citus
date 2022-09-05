@@ -16,9 +16,14 @@
 #include "c.h"
 
 #include "nodes/pg_list.h"
-#include "pg_version_compat.h"
+#include "nodes/nodes.h"
+#include "nodes/primnodes.h"
+#include "nodes/makefuncs.h"
+#include "nodes/nodeFuncs.h"
 #include "utils/array.h"
 #include "utils/hsearch.h"
+
+#include "pg_version_compat.h"
 
 
 /*
@@ -166,15 +171,32 @@ typedef struct ListCellAndListWrapper
 #define foreach_ptr_append(var, l) foreach_ptr(var, l)
 #endif
 
-/* utility functions declaration shared within this module */
-extern List * SortList(List *pointerList,
-					   int (*ComparisonFunction)(const void *, const void *));
-extern void ** PointerArrayFromList(List *pointerList);
-extern HTAB * ListToHashSet(List *pointerList, Size keySize, bool isStringList);
-extern char * StringJoin(List *stringList, char delimiter);
-extern List * ListTake(List *pointerList, int size);
-extern void * safe_list_nth(const List *list, int index);
-extern List * GeneratePositiveIntSequenceList(int upTo);
-extern List * GenerateListFromElement(void *listElement, int listLength);
+static inline List*
+CustomBuildTlist(List* tlist)
+{
+	List		*result_tlist = NIL;
+	ListCell	*lc;
+
+	foreach (lc, tlist)
+	{
+		TargetEntry	*tle = (TargetEntry *) lfirst(lc);
+
+		Var *var = makeVar(INDEX_VAR,	/* point to subplan's elements */
+						   tle->resno,
+						   exprType((Node *) tle->expr),
+						   exprTypmod((Node *) tle->expr),
+						   exprCollation((Node *) tle->expr),
+						   0);
+
+		TargetEntry *newtle = makeTargetEntry((Expr *) var,
+											  tle->resno,
+											  tle->resname,
+											  tle->resjunk);
+
+		result_tlist = lappend(result_tlist, newtle);
+	}
+
+	return result_tlist;
+}
 
 #endif /* CITUS_LISTUTILS_H */

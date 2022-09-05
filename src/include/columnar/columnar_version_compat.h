@@ -18,7 +18,7 @@
 #define ColumnarProcessUtility_compat(a, b, c, d, e, f, g, h) \
 	ColumnarProcessUtility(a, b, c, d, e, f, g, h)
 #define PrevProcessUtilityHook_compat(a, b, c, d, e, f, g, h) \
-	PrevProcessUtilityHook(a, b, c, d, e, f, g, h)
+	PreviousProcessUtilityHook(a, b, c, d, e, f, g, h)
 #define GetOldestNonRemovableTransactionId_compat(a, b) \
 	GetOldestNonRemovableTransactionId(a)
 #define ExecSimpleRelationInsert_compat(a, b, c) \
@@ -29,7 +29,7 @@
 #define ColumnarProcessUtility_compat(a, b, c, d, e, f, g, h) \
 	ColumnarProcessUtility(a, b, d, e, f, g, h)
 #define PrevProcessUtilityHook_compat(a, b, c, d, e, f, g, h) \
-	PrevProcessUtilityHook(a, b, d, e, f, g, h)
+	PreviousProcessUtilityHook(a, b, d, e, f, g, h)
 #define GetOldestNonRemovableTransactionId_compat(a, b) GetOldestXmin(a, b)
 #define ExecSimpleRelationInsert_compat(a, b, c) \
 	ExecSimpleRelationInsert(b, c)

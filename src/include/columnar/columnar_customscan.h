@@ -13,7 +13,9 @@
 #ifndef COLUMNAR_CUSTOMSCAN_H
 #define COLUMNAR_CUSTOMSCAN_H
 
-void columnar_customscan_init(void);
+#include "nodes/extensible.h"
 
+extern const CustomScanMethods * columnar_customscan_methods(void);
+extern void columnar_customscan_register(void);
 
 #endif /* COLUMNAR_CUSTOMSCAN_H */

@@ -12,6 +12,10 @@
 #ifndef COLUMNAR_COMPRESSION_H
 #define COLUMNAR_COMPRESSION_H
 
+#include "postgres.h"
+
+#include "nodes/extensible.h"
+
 /* Enumaration for columnar table's compression method */
 typedef enum
 {

@@ -210,11 +210,18 @@ extern int columnar_compression;
 extern int columnar_stripe_row_limit;
 extern int columnar_chunk_group_row_limit;
 extern int columnar_compression_level;
+extern bool columnar_enable_custom_scan;
+extern bool columnar_enable_qual_pushdown;
+extern double columnar_qual_pushdown_correlation_threshold;
+extern int columnar_max_custom_scan_paths;
+extern int columnar_planner_debug_level;
+extern bool columnar_enable_version_checks;
 
 /* called when the user changes options on the given relation */
 typedef void (*ColumnarTableSetOptions_hook_type)(Oid relid, ColumnarOptions options);
 
 extern void columnar_init(void);
+extern void columnar_fini(void);
 extern void columnar_init_gucs(void);
 
 extern CompressionType ParseCompressionType(const char *compressionTypeString);
@@ -322,5 +329,15 @@ extern void NonTransactionDropWriteState(Oid relfilenode);
 extern bool PendingWritesInUpperTransactions(Oid relfilenode,
 											 SubTransactionId currentSubXid);
 extern MemoryContext GetWriteContextForDebug(void);
+
+/* Vectorization */ 
+
+extern bool columnar_enable_vectorization;
+extern bool columnar_use_simd;
+
+extern bool ColumnarReadNextVector(ColumnarReadState *readState, 
+								   Datum *columnValues,
+								   bool *columnNulls,
+   								   int *newVectorSize);
 
 #endif /* COLUMNAR_H */

@@ -12,6 +12,10 @@
 #ifndef COLUMNAR_METADATA_H
 #define COLUMNAR_METADATA_H
 
+#include "postgres.h"
+
+#include "nodes/extensible.h"
+
 /*
  * StripeMetadata represents information about a stripe. This information is
  * stored in the metadata table "columnar.stripe".
