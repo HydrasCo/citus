@@ -2547,6 +2547,23 @@ agg_retrieve_direct(VectorAggState *vectoraggstate)
 
 						pergroupstate = &pergroups[currentSet][transno];
 
+						// HYDRA: should check in future does this holds
+						// Should handle COUNT(*)
+						if (pertrans->aggref->aggstar)
+						{
+							int32 skipSlots = 0;
+							int skipSlotCounter;
+							int slotDim = ((VectorTupleSlot *)outerslot)->dim;
+				
+							for (skipSlotCounter = 0; skipSlotCounter < slotDim; skipSlotCounter++)
+							{
+								if (((VectorTupleSlot *)outerslot)->skip[skipSlotCounter])
+									skipSlots++;
+							}
+
+							pergroupstate->transValue += slotDim - skipSlots;
+						}
+
 						if (pertrans->numSortCols > 0)
 						{
 							Assert(aggstate->aggstrategy != AGG_HASHED &&

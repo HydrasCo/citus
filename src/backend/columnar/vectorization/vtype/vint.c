@@ -23,6 +23,13 @@
 #include "columnar/vectorization/vtype/vtype.h"
 
 
+PG_FUNCTION_INFO_V1(vint8inc_empty);
+Datum vint8inc_empty(PG_FUNCTION_ARGS)
+{
+	int64 arg = PG_GETARG_INT64(0);
+	PG_RETURN_INT64(arg);
+}
+
 PG_FUNCTION_INFO_V1(vint8inc);
 Datum vint8inc(PG_FUNCTION_ARGS)
 {
@@ -263,6 +270,130 @@ vint4vint4pl(PG_FUNCTION_ARGS)
 	}
 #endif
 
+	res->dim = arg1->dim; 
+	PG_RETURN_POINTER(res);
+}
+
+PG_FUNCTION_INFO_V1(vint2int2ne);
+Datum vint2int2ne(PG_FUNCTION_ARGS)
+{
+	vint2 *arg1 = (vint2*)PG_GETARG_POINTER(0);
+	int2 arg2 = PG_GETARG_INT64(1);
+
+	vbool *res = build_vtype(BOOLOID, 1, VECTOR_BATCH_SIZE, arg1->skipref);
+
+#ifdef SIMD
+	if (columnar_use_simd)
+	{
+		// __m256i cmp_values = _mm256_set1_epi64x(arg2);
+
+		// int number_iterations = arg1->dim / 4 + (arg1->dim % 4 ?  1 : 0);
+
+		// int pos = 0;
+
+		// for (int n = 0; n < number_iterations; n++)
+		// {
+		// 	int8 *b = (int8*) arg1->values + pos;
+
+		// 	bool *c = (bool*) res->values + pos;
+
+		// 	__m256i values = _mm256_loadu_si256((__m256i const *)b);
+
+		// 	__m256i cmp_result = _mm256_cmpgt_epi64(cmp_values, values);
+
+		// 	c[0] = _mm256_extract_epi8(cmp_result, 0);
+		// 	c[1] = _mm256_extract_epi8(cmp_result, 4);  
+		// 	c[2] = _mm256_extract_epi8(cmp_result, 8);  
+		// 	c[3] = _mm256_extract_epi8(cmp_result, 12);
+
+		// 	pos += 8;
+		// }
+	}
+	else
+	{
+#endif
+		int size = 0; 
+		int i = 0;
+		size = arg1->dim;
+
+		while(i < size) 
+		{
+			res->isnull[i] = arg1->isnull[i];
+
+			if(!arg1->isnull[i]) 
+			{
+				int2 *a = (int2*) arg1->values + i;
+				bool *c = (bool*) res->values + i;
+				*c = (bool) (*a != arg2);
+			}
+
+			i++; 
+		}
+#ifdef SIMD
+	}
+#endif
+	res->dim = arg1->dim; 
+	PG_RETURN_POINTER(res);
+}
+
+PG_FUNCTION_INFO_V1(vint2int4ne);
+Datum vint2int4ne(PG_FUNCTION_ARGS)
+{
+	vint2 *arg1 = (vint2*)PG_GETARG_POINTER(0);
+	int4 arg2 = PG_GETARG_INT64(1);
+
+	vbool *res = build_vtype(BOOLOID, 1, VECTOR_BATCH_SIZE, arg1->skipref);
+
+#ifdef SIMD
+	if (columnar_use_simd)
+	{
+		// __m256i cmp_values = _mm256_set1_epi64x(arg2);
+
+		// int number_iterations = arg1->dim / 4 + (arg1->dim % 4 ?  1 : 0);
+
+		// int pos = 0;
+
+		// for (int n = 0; n < number_iterations; n++)
+		// {
+		// 	int8 *b = (int8*) arg1->values + pos;
+
+		// 	bool *c = (bool*) res->values + pos;
+
+		// 	__m256i values = _mm256_loadu_si256((__m256i const *)b);
+
+		// 	__m256i cmp_result = _mm256_cmpgt_epi64(cmp_values, values);
+
+		// 	c[0] = _mm256_extract_epi8(cmp_result, 0);
+		// 	c[1] = _mm256_extract_epi8(cmp_result, 4);  
+		// 	c[2] = _mm256_extract_epi8(cmp_result, 8);  
+		// 	c[3] = _mm256_extract_epi8(cmp_result, 12);
+
+		// 	pos += 8;
+		// }
+	}
+	else
+	{
+#endif
+		int size = 0; 
+		int i = 0;
+		size = arg1->dim;
+
+		while(i < size) 
+		{
+			res->isnull[i] = arg1->isnull[i];
+
+			if(!arg1->isnull[i]) 
+			{
+				int2 *a = (int2*) arg1->values + i;
+				bool *c = (bool*) res->values + i;
+				*c = (bool) (*a != arg2);
+			}
+
+			i++; 
+		}
+#ifdef SIMD
+	}
+#endif
 	res->dim = arg1->dim; 
 	PG_RETURN_POINTER(res);
 }

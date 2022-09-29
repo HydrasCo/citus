@@ -5,10 +5,12 @@
 -- DROP AGG functions
 
 DROP AGGREGATE IF EXISTS count(vany);
+DROP AGGREGATE IF EXISTS vcount(*);
 
 -- DROP FUNCTIONS
 
 DROP FUNCTION IF EXISTS vint8inc(int8, vany);
+DROP FUNCTION IF EXISTS vint8inc_empty(int8);
 
 -- DROP TYPES
 
@@ -53,6 +55,14 @@ CREATE TYPE vtext ( INPUT = vtextin, OUTPUT = vtextout, storage=plain, internall
 
 -- create operators for the vectorized types
 
+    -- vint2
+
+CREATE FUNCTION vint2int2ne(vint2, int2) RETURNS vbool AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE STRICT;
+CREATE OPERATOR <> ( leftarg = vint2, rightarg = int2, procedure = vint2int2ne, commutator = = );
+
+CREATE FUNCTION vint2int4ne(vint2, int4) RETURNS vbool AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE STRICT;
+CREATE OPERATOR <> ( leftarg = vint2, rightarg = int4, procedure = vint2int4ne, commutator = = );
+
     -- vint4
 
 CREATE FUNCTION vint4int4lt(vint4, int4) RETURNS vbool AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE STRICT;
@@ -75,3 +85,6 @@ CREATE OPERATOR & ( leftarg = vbool, rightarg = vbool, procedure = vbool_and_vbo
 
 CREATE FUNCTION vint8inc(int8, vany) RETURNS int8 AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
 CREATE AGGREGATE count(vany) ( sfunc = vint8inc, stype = int8 );
+
+CREATE FUNCTION vint8inc_empty(int8) RETURNS int8 AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE;
+CREATE AGGREGATE vcount(*) ( sfunc = vint8inc_empty, stype = int8 );

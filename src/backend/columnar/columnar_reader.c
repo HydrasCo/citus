@@ -1859,10 +1859,14 @@ ReadChunkGroupNextVector(ChunkGroupReadState *chunkGroupReadState, Datum *column
 				}
 			
 				column->isDistinct[column->dim] = true;
+				
+				column->isnull[column->dim] = false;
 
 				column->dim++;
 
 				columnValueOffset[columnIndex] += column->elemsize;
+
+
 			}
 		}
 

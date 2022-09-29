@@ -263,7 +263,19 @@ VectorizeMutator(Node *node)
 				if (!HeapTupleIsValid(proctup))
 					elog(ERROR, "cache lookup failed for function %u", oldfnOid);
 				procform = (Form_pg_proc) GETSTRUCT(proctup);
-				proname = NameStr(procform->proname);
+
+				if (newnode->aggstar)
+				{
+					int originalFunNameLen = strlen(NameStr(procform->proname));
+					proname = palloc0(sizeof(char) * originalFunNameLen + 2);
+					proname[0] = 'v';
+					memcpy(proname+1, NameStr(procform->proname), originalFunNameLen);
+				}
+				else
+				{
+					proname = NameStr(procform->proname);
+				}
+				
 				funcname = lappend(funcname, makeString(proname));
 
 				argtypes = palloc(sizeof(Oid) * procform->pronargs);
