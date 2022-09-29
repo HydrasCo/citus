@@ -2525,7 +2525,8 @@ downgrade_columnar_storage(PG_FUNCTION_ARGS)
 
 /* Vectorization */ 
 
-#include  "columnar/vectorization/columnar_vectortupleslot.h"
+#include "columnar/vectorization/columnar_vectortupleslot.h"
+#include "columnar/vectorization/vtype/vtype.h"
 
 bool 
 columnar_getnextvector(TableScanDesc sscan,
@@ -2571,7 +2572,10 @@ columnar_getnextvector(TableScanDesc sscan,
 	ExecStoreVirtualTuple(slot);
 
 	for (int i = 0; i < slot->tts_tupleDescriptor->natts; i++)
-	{
+	{			
+		Vtype* column = (Vtype*) slot->tts_values[i];
+		column->elemval = slot->tts_tupleDescriptor->attrs[i].attlen != -1 ? true : false; // HYDRA: do we need this ?
+		memset(column->isDistinct, 1, newVectorSize);
 		slot->tts_isnull[i] = false;
 	}
 	

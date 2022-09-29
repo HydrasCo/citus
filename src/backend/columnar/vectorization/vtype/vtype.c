@@ -24,7 +24,8 @@ Vtype* build_vtype(Oid elemtype, int elemsize, int dim, bool *skip)
 	res = palloc0(sizeof(Vtype));
 	res->dim = dim;
 	res->elemtype = elemtype;
-	res->values = palloc(elemsize * dim);
+	res->elemsize = elemsize;
+	res->values = palloc0(elemsize * dim);
 	res->skipref = skip;
 	return res;
 }
@@ -79,6 +80,7 @@ v##fname##in(PG_FUNCTION_ARGS) \
 		(errcode(ERRCODE_INVALID_PARAMETER_VALUE), \
 				errmsg("int2vector has too many elements"))); \
 	res->elemtype = typeoid; \
+	res->elemsize = typelen; \
 	res->dim = n; \
 	SET_VARSIZE(res, VTYPESIZE(n)); \
 	PG_RETURN_POINTER(res); \
@@ -119,3 +121,4 @@ FUNCTION_BUILD(int2, 2, int2, INT2OID)
 FUNCTION_BUILD(int4, 4, int4, INT4OID)
 FUNCTION_BUILD(int8, 8, int8, INT8OID)
 FUNCTION_BUILD(bool, 1, bool, BOOLOID)
+FUNCTION_BUILD(text, -1, text, TEXTOID)

@@ -1839,13 +1839,30 @@ ReadChunkGroupNextVector(ChunkGroupReadState *chunkGroupReadState, Datum *column
 
 				int columnTypeLength = attributeForm->attlen;
 
-				int8 *writeColumnRowPosition = (int8 *)column->values + columnValueOffset[columnIndex];
+				if (columnTypeLength != -1)
+				{
+					int8 *writeColumnRowPosition = (int8 *)column->values + columnValueOffset[columnIndex];
 
-				store_att_byval(writeColumnRowPosition, chunkGroupData->valueArray[columnIndex][rowIndex], columnTypeLength);
+					store_att_byval(writeColumnRowPosition, chunkGroupData->valueArray[columnIndex][rowIndex], columnTypeLength);
+				}
+				else if (columnTypeLength == -1)
+				{
+					Pointer val = DatumGetPointer(chunkGroupData->valueArray[columnIndex][rowIndex]);
+					
+					Size data_length = VARSIZE(val);
+					
+					Datum *varLenTypeContainer = palloc0(sizeof(int8) * data_length);
+
+					memcpy(varLenTypeContainer, val, data_length);
+
+					*(Datum *) ((int8 *)column->values + columnValueOffset[columnIndex]) = varLenTypeContainer;
+				}
+			
+				column->isDistinct[column->dim] = true;
 
 				column->dim++;
 
-				columnValueOffset[columnIndex] += columnTypeLength;
+				columnValueOffset[columnIndex] += column->elemsize;
 			}
 		}
 

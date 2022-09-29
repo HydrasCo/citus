@@ -43,14 +43,13 @@ VectorMakeSlot(TupleDesc tupleDesc)
 	for (i = 0; i < tupleDesc->natts; i++)
 	{
 		typid = TupleDescAttr(tupleDesc, i)->atttypid;
-		typlen = TupleDescAttr(tupleDesc, i)->attlen;
-
-		// HYDRA: check!
-		if (typlen = -1)
-			typlen = sizeof(Datum);
-
+		typlen = TupleDescAttr(tupleDesc, i)->attlen == -1 ?  sizeof(Datum) : TupleDescAttr(tupleDesc, i)->attlen;
+		
 		column = build_vtype(typid, typlen, VECTOR_BATCH_SIZE, vslot->skip);
+		
 		column->dim = 0;
+		column->elemval = TupleDescAttr(tupleDesc, i)->attlen == -1  ? false : true;
+
 		vslot->tts.tts_values[i] = PointerGetDatum(column);
 		vslot->tts.tts_isnull[i] = false;
 	}

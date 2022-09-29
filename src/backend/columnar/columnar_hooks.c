@@ -51,11 +51,6 @@
 
 typedef bool (*PathPredicate)(Path *path);
 
-typedef struct VectorizedContext
-{
-	Bitmapset *used_columns;
-} VectorizedContext;
-
 /* saved hook value in case of unload */
 static set_rel_pathlist_hook_type PreviousSetRelPathlistHook = NULL;
 static get_relation_info_hook_type PreviousGetRelationInfoHook = NULL;
@@ -82,10 +77,9 @@ static void ColumnarProcessUtility(PlannedStmt *pstmt,
 								   QueryCompletionCompat *completionTag);
 
 
-static void MutatePlanFields(Plan *newplan, Plan *oldplan, 
-							 Node *(*mutator) (), void *context);
-static Node * PlanTreeMutator(Node *node, Node *(*mutator) (), void *context);
-static Plan * ReplacePlanNodeWalker(Node *node, VectorizedContext* ctx);
+static void MutatePlanFields(Plan *newplan, Plan *oldplan, Node *(*mutator) ());
+static Node * PlanTreeMutator(Node *node, Node *(*mutator) ());
+static Plan * ReplacePlanNodeWalker(Node *node);
 
 
 /* functions to cost paths in-place */
@@ -130,10 +124,9 @@ ColumnarVectorPlanerHook(Query *parse,
 				 		 ParamListInfo boundParams)
 {
 	PlannedStmt	*stmt;
-	Plan		*savedPlanTree;
-	List		*savedSubplan;
+	Plan *savedPlanTree;
+	List *savedSubplan;
 	MemoryContext saved_context;
-	VectorizedContext ctx;
 
 	if (PreviousPlannerHook)
 		stmt = PreviousPlannerHook(parse, query_string, cursorOptions, boundParams);
@@ -155,15 +148,13 @@ ColumnarVectorPlanerHook(Query *parse,
 	{
 		List		*subplans = NULL;
 		ListCell	*cell;
-		ctx.used_columns = NULL;
 
-		stmt->planTree = ReplacePlanNodeWalker((Node *) stmt->planTree, &ctx);
+		stmt->planTree = ReplacePlanNodeWalker((Node *) stmt->planTree);
 
 		foreach(cell, stmt->subplans)
 		{
 			Plan	*subplan;
-			ctx.used_columns = NULL;
-			subplan = ReplacePlanNodeWalker((Node *)lfirst(cell), &ctx);
+			subplan = ReplacePlanNodeWalker((Node *)lfirst(cell));
 			subplans = lappend(subplans, subplan);
 		}
 		stmt->subplans = subplans;
@@ -227,7 +218,7 @@ GetNodeReturnType(Node *node)
  * over...
  */
 static Node*
-VectorizeMutator(Node *node, VectorizedContext *ctx)
+VectorizeMutator(Node *node)
 {
 
 	if(NULL == node)
@@ -240,38 +231,32 @@ VectorizeMutator(Node *node, VectorizedContext *ctx)
 			{
 				Var *newnode;
 				Oid vtype;
-				newnode = (Var*)PlanTreeMutator(node, VectorizeMutator, ctx);
+				newnode = (Var*)PlanTreeMutator(node, VectorizeMutator);
 				vtype = get_vector_type(newnode->vartype);
-				if (!IS_SPECIAL_VARNO(newnode->varno) && newnode->varattno > 0)
-				{
-					ctx->used_columns = bms_add_member(ctx->used_columns, newnode->varattno);
-				}
 				if (InvalidOid == vtype)
-				{
 					elog(ERROR, "Cannot find vtype for type %d", newnode->vartype);
-				}
 				newnode->vartype = vtype;
 				return (Node *)newnode;
 			}
 
 		case T_Aggref:
 			{
-				Aggref	*newnode;
-				Oid		oldfnOid;
-				Oid		retype;
-				HeapTuple	proctup;
+				Aggref *newnode;
+				Oid oldfnOid;
+				Oid retype;
+				HeapTuple proctup;
 				Form_pg_proc procform;
-				List	*funcname = NULL;
-				int		i;
-				Oid		*argtypes;
-				char	*proname;
-				bool		retset;
-				int			nvargs;
-				Oid			vatype;
-				Oid		   *true_oid_array;
+				List *funcname = NULL;
+				int i;
+				Oid	*argtypes;
+				char *proname;
+				bool retset;
+				int nvargs;
+				Oid vatype;
+				Oid *true_oid_array;
 				FuncDetailCode	fdresult;
 
-				newnode = (Aggref *)PlanTreeMutator(node, VectorizeMutator, ctx);
+				newnode = (Aggref *)PlanTreeMutator(node, VectorizeMutator);
 				oldfnOid = newnode->aggfnoid;
 
 				proctup = SearchSysCache1(PROCOID, ObjectIdGetDatum(oldfnOid));
@@ -286,7 +271,7 @@ VectorizeMutator(Node *node, VectorizedContext *ctx)
 				{
 					argtypes[i] = get_vector_type(procform->proargtypes.values[i]);
 				}
-
+				
 				fdresult = func_get_detail(funcname, NIL, NIL,
 						procform->pronargs, argtypes, false, false, false,
 						&newnode->aggfnoid, &retype, &retset,
@@ -305,26 +290,26 @@ VectorizeMutator(Node *node, VectorizedContext *ctx)
 			{
 				BoolExpr *bool_expr;
 				OpExpr *bin_expr;
-				Oid		ltype, rtype;
-				Form_pg_operator	voper;
-				HeapTuple			tuple;
+				Oid ltype, rtype;
+				Form_pg_operator voper;
+				HeapTuple tuple;
 
 				/* mutate OpExpr itself in plan_tree_mutator firstly. */
-				bool_expr = (BoolExpr *)PlanTreeMutator(node, VectorizeMutator, ctx);
+				bool_expr = (BoolExpr *)PlanTreeMutator(node, VectorizeMutator);
+
 				if (list_length(bool_expr->args) != 2)
-				{
 					elog(ERROR, "Unary operator not supported");
-				}
+
 				ltype = GetNodeReturnType(linitial(bool_expr->args));
 				rtype = GetNodeReturnType(lsecond(bool_expr->args));
 
 				//get the vectorized operator functions
 				tuple = oper(NULL, list_make1(makeString(bool_expr->boolop == AND_EXPR ? "&" : "|")),
  							 ltype, rtype, true, -1);
+
 				if (NULL == tuple)
-				{
 					elog(ERROR, "Vectorized operator not found");
-				}
+			
 
 				voper = (Form_pg_operator)GETSTRUCT(tuple);
 				bin_expr = (OpExpr*)make_opclause(voper->oid, voper->oprresult, false,
@@ -338,36 +323,34 @@ VectorizeMutator(Node *node, VectorizedContext *ctx)
 			}
 		case T_OpExpr:
 			{
-				OpExpr	*newnode;
-				Oid		ltype, rtype;
+				OpExpr *newnode;
+				Oid	ltype, rtype;
 				Oid rettype;
-				Form_pg_operator	voper;
-				HeapTuple			tuple;
+				Form_pg_operator voper;
+				HeapTuple tuple;
 
 				/* mutate OpExpr itself in plan_tree_mutator firstly. */
-				newnode = (OpExpr *)PlanTreeMutator(node, VectorizeMutator, ctx);
+				newnode = (OpExpr *)PlanTreeMutator(node, VectorizeMutator);
 				rettype = get_vector_type(newnode->opresulttype);
+
 				if (InvalidOid == rettype)
-				{
 					elog(ERROR, "Cannot find vtype for type %d", newnode->opresulttype);
-				}
 
 				if (list_length(newnode->args) != 2)
-				{
 					elog(ERROR, "Unary operator not supported");
-				}
+
 				ltype = GetNodeReturnType(linitial(newnode->args));
 				rtype = GetNodeReturnType(lsecond(newnode->args));
 
 				//get the vectorized operator functions
 				tuple = oper(NULL, list_make1(makeString(get_opname(newnode->opno))),
 						ltype, rtype, true, -1);
-				if(NULL == tuple)
-				{
-					elog(ERROR, "Vectorized operator not found");
-				}
 
+				if(NULL == tuple)
+					elog(ERROR, "Vectorized operator not found");
+			
 				voper = (Form_pg_operator)GETSTRUCT(tuple);
+
 				if(voper->oprresult != rettype)
 				{
 					ReleaseSysCache(tuple);
@@ -383,17 +366,13 @@ VectorizeMutator(Node *node, VectorizedContext *ctx)
 			}
 
 		default:
-			return PlanTreeMutator(node, VectorizeMutator, ctx);
+			return PlanTreeMutator(node, VectorizeMutator);
 	}
 }
 
 static Node *
-PlanTreeMutator(Node *node,
-				  Node *(*mutator) (),
-				  void *context)
+PlanTreeMutator(Node *node, Node *(*mutator) ())
 {
-	VectorizedContext* ctx = (VectorizedContext*)context;
-
 	/*
 	 * The mutator has already decided not to modify the current node, but we
 	 * must call the mutator for any sub-nodes.
@@ -402,37 +381,14 @@ PlanTreeMutator(Node *node,
 		( (newnode) = makeNode(nodetype), \
 		memcpy((newnode), (node), sizeof(nodetype)) )
 
-#define CHECKFLATCOPY(newnode, node, nodetype)	\
-		( AssertMacro(IsA((node), nodetype)), \
-		(newnode) = makeNode(nodetype), \
-		memcpy((newnode), (node), sizeof(nodetype)) )
-
 #define MUTATE(newfield, oldfield, fieldtype)  \
-		( (newfield) = (fieldtype) mutator((Node *) (oldfield), context) )
+		( (newfield) = (fieldtype) mutator((Node *) (oldfield)) )
 
 #define PLANMUTATE(newplan, oldplan) \
-		MutatePlanFields((Plan*)(newplan), (Plan*)(oldplan), mutator, context)
+		MutatePlanFields((Plan*)(newplan), (Plan*)(oldplan), mutator)
 
-/* This is just like PLANMUTATE because Scan adds only scalar fields. */
 #define SCANMUTATE(newplan, oldplan) \
-		MutatePlanFields((Plan*)(newplan), (Plan*)(oldplan), mutator, context)
-
-#define COPYARRAY(dest,src,lenfld,datfld) \
-	do { \
-		(dest)->lenfld = (src)->lenfld; \
-		if ( (src)->lenfld > 0  && \
-			 (src)->datfld != NULL) \
-		{ \
-			Size _size = ((src)->lenfld*sizeof(*((src)->datfld))); \
-			(dest)->datfld = palloc(_size); \
-			memcpy((dest)->datfld, (src)->datfld, _size); \
-		} \
-		else \
-		{ \
-			(dest)->datfld = NULL; \
-		} \
-	} while (0)
-
+		MutatePlanFields((Plan*)(newplan), (Plan*)(oldplan), mutator)
 
 	if (node == NULL)
 		return NULL;
@@ -445,66 +401,75 @@ PlanTreeMutator(Node *node,
 		/* We are expecting here VectorScan */
 		case T_CustomScan:
 			{
-				CustomScan	*newcscan;
-				CustomScan	*oldcscan = (CustomScan *)node;
-				FLATCOPY(newcscan, oldcscan, CustomScan);
-				SCANMUTATE(newcscan, node);
-				return (Node *)newcscan;
+				CustomScan *oldCustomScan = (CustomScan *)node;
+				CustomScan *newCustomScan;
+
+				FLATCOPY(newCustomScan, oldCustomScan, CustomScan);
+				SCANMUTATE(newCustomScan, node);
+
+				return (Node *) newCustomScan;
 			}
 
 		case T_Agg:
 			{
+				Agg *oldAgg = (Agg *) node;
+				Agg	*newAgg;
+				CustomScan *aggScanNode;
 
-				CustomScan	*cscan;
-				Agg			*vagg;
-
-				if (((Agg *)node)->aggstrategy != AGG_PLAIN && ((Agg *)node)->aggstrategy != AGG_HASHED)
+				if (oldAgg->aggstrategy != AGG_PLAIN && oldAgg->aggstrategy != AGG_HASHED)
 					elog(ERROR, "Non plain agg is not supported");
 
-				cscan = make_vectoraggscan_customscan();
-				FLATCOPY(vagg, node, Agg);
-				cscan->custom_plans = lappend(cscan->custom_plans, vagg);
-				SCANMUTATE(vagg, node);
-				cscan->scan.plan.targetlist = CustomBuildTlist(vagg->plan.targetlist);
-				cscan->custom_scan_tlist = vagg->plan.targetlist;
-				return (Node *)cscan;
+				aggScanNode = make_vectoraggscan_customscan();
+
+				FLATCOPY(newAgg, oldAgg, Agg);
+
+				aggScanNode->custom_plans = lappend(aggScanNode->custom_plans, newAgg);
+				aggScanNode->scan.plan.targetlist = CustomBuildTlist(newAgg->plan.targetlist);
+				aggScanNode->custom_scan_tlist = newAgg->plan.targetlist;
+
+				SCANMUTATE(newAgg, oldAgg);
+
+				return (Node *) aggScanNode;
 			}
+
 		case T_Const:
 			{
-				Const *oldnode = (Const *) node;
-				Const *newnode;
+				Const *oldConst = (Const *) node;
+				Const *newConst;
 
-				FLATCOPY(newnode, oldnode, Const);
-				return (Node *) newnode;
+				FLATCOPY(newConst, oldConst, Const);
+				return (Node *) newConst;
 			}
 
 		case T_Var:
 			{
-				Var	*var = (Var *)node;
-				Var	*newnode;
+				Var	*oldVar = (Var *) node;
+				Var	*newVar;
 
-				FLATCOPY(newnode, var, Var);
-				return (Node *)newnode;
+				FLATCOPY(newVar, oldVar, Var);
+				return (Node *) newVar;
 			}
 
 		case T_OpExpr:
 			{
-				OpExpr	*expr = (OpExpr *)node;
-				OpExpr	*newnode;
+				OpExpr *oldOpExpr = (OpExpr *) node;
+				OpExpr *newOpExpr;
 
-				FLATCOPY(newnode, expr, OpExpr);
-				MUTATE(newnode->args, expr->args, List *);
-				return (Node *)newnode;
+				FLATCOPY(newOpExpr, oldOpExpr, OpExpr);
+				MUTATE(newOpExpr->args, oldOpExpr->args, List *);
+
+				return (Node *) newOpExpr;
 			}
 
 		case T_FuncExpr:
 			{
-				FuncExpr	*expr = (FuncExpr *)node;
-				FuncExpr	*newnode;
+				FuncExpr *oldFuncExpr = (FuncExpr *) node;
+				FuncExpr *newFuncExpr;
 
-				FLATCOPY(newnode, expr, FuncExpr);
-				MUTATE(newnode->args, expr->args, List *);
-				return (Node *)newnode;
+				FLATCOPY(newFuncExpr, oldFuncExpr, FuncExpr);
+				MUTATE(newFuncExpr->args, oldFuncExpr->args, List *);
+
+				return (Node *) newFuncExpr;
 			}
 
 		case T_List:
@@ -514,46 +479,91 @@ PlanTreeMutator(Node *node,
 				 * per se, so just invoke it on each list element. NOTE: this
 				 * would fail badly on a list with integer elements!
 				 */
-				List	   *resultlist;
-				ListCell   *temp;
+				List *newResultList =  NULL;
+				ListCell *lc;
 
-				resultlist = NIL;
-				foreach(temp, (List *) node)
+				foreach(lc, (List *) node)
 				{
-					resultlist = lappend(resultlist,
-										 mutator((Node *) lfirst(temp),
-												 context));
+					newResultList = lappend(newResultList,
+											mutator((Node *) lfirst(lc)));
 				}
-				return (Node *) resultlist;
+
+				return (Node *) newResultList;
 			}
 
 		case T_TargetEntry:
 			{
-				TargetEntry *targetentry = (TargetEntry *) node;
-				TargetEntry *newnode;
+				TargetEntry *oldTargetEntry = (TargetEntry *) node;
+				TargetEntry *newTargetEntry;
 
-				FLATCOPY(newnode, targetentry, TargetEntry);
-				MUTATE(newnode->expr, targetentry->expr, Expr *);
-				return (Node *) newnode;
+				FLATCOPY(newTargetEntry, oldTargetEntry, TargetEntry);
+				MUTATE(newTargetEntry->expr, oldTargetEntry->expr, Expr *);
+
+				return (Node *) newTargetEntry;
 			}
+
 		case T_Aggref:
 			{
-				Aggref	   *aggref = (Aggref *) node;
-				Aggref	   *newnode;
+				Aggref *oldAggRef = (Aggref *) node;
+				Aggref *newAggRef;
 
-				FLATCOPY(newnode, aggref, Aggref);
+				FLATCOPY(newAggRef, oldAggRef, Aggref);
 				/* assume mutation doesn't change types of arguments */
-				newnode->aggargtypes = list_copy(aggref->aggargtypes);
-				MUTATE(newnode->aggdirectargs, aggref->aggdirectargs, List *);
-				MUTATE(newnode->args, aggref->args, List *);
-				MUTATE(newnode->aggorder, aggref->aggorder, List *);
-				MUTATE(newnode->aggdistinct, aggref->aggdistinct, List *);
-				MUTATE(newnode->aggfilter, aggref->aggfilter, Expr *);
-				return (Node *) newnode;
+				newAggRef->aggargtypes = list_copy(oldAggRef->aggargtypes);
+				MUTATE(newAggRef->aggdirectargs, oldAggRef->aggdirectargs, List *);
+				MUTATE(newAggRef->args, oldAggRef->args, List *);
+				MUTATE(newAggRef->aggorder, oldAggRef->aggorder, List *);
+				MUTATE(newAggRef->aggdistinct, oldAggRef->aggdistinct, List *);
+				MUTATE(newAggRef->aggfilter, oldAggRef->aggfilter, Expr *);
+				return (Node *) newAggRef;
+			}
+	
+		case T_SortGroupClause: 
+			{
+				SortGroupClause *sortGroupClause = (SortGroupClause *)node;
+				SortGroupClause *newSortGroupClause;
+
+				FLATCOPY(newSortGroupClause, sortGroupClause, SortGroupClause);
+
+				return (Node *)newSortGroupClause;
+			}
+		
+		case T_Sort:
+			{
+				Sort *oldSort = (Sort *) node;
+				Sort *newSort;
+
+				FLATCOPY(newSort, oldSort, Sort);
+				SCANMUTATE(newSort, oldSort);
+
+				return (Node *)newSort;
+			}
+
+		case T_WindowAgg:
+			{
+				WindowAgg *oldWindowAgg = (WindowAgg *) node;
+				WindowAgg *newWindowAgg;
+
+				FLATCOPY(newWindowAgg, oldWindowAgg, WindowAgg);
+				SCANMUTATE(newWindowAgg, oldWindowAgg);
+
+				return (Node *) newWindowAgg;
+			}
+
+		case T_WindowFunc:
+			{
+				WindowFunc *oldWindowFunc = (WindowFunc *) node;
+				WindowFunc *newWindowFunc;
+
+				FLATCOPY(newWindowFunc, oldWindowFunc, WindowFunc);
+				MUTATE(newWindowFunc->args, oldWindowFunc->args, List *);
+				MUTATE(newWindowFunc->aggfilter, oldWindowFunc->aggfilter, Expr *);
+
+				return (Node *) newWindowFunc;
 			}
 
 	  default:
-			elog(ERROR, "node type %d not supported", nodeTag(node));
+			elog(ERROR, "Node type %d not supported for vectorization", nodeTag(node));
 			break;
 	}
 }
@@ -565,10 +575,9 @@ PlanTreeMutator(Node *node,
  *
  */
 static void
-MutatePlanFields(Plan *newplan, Plan *oldplan, 
-				 Node *(*mutator) (), void *context)
+MutatePlanFields(Plan *newplan, Plan *oldplan, Node *(*mutator) ())
 {
-	List* conjuncts = (List*)mutator((Node*)oldplan->qual, context);
+	List* conjuncts = (List*)mutator((Node*)oldplan->qual);
 	int n_conjuncts = list_length(conjuncts);
 	if (n_conjuncts > 1)
 	{
@@ -618,9 +627,9 @@ MutatePlanFields(Plan *newplan, Plan *oldplan,
  * Replace the non-vectorirzed type to vectorized type
  */
 static Plan* 
-ReplacePlanNodeWalker(Node *node, VectorizedContext* ctx)
+ReplacePlanNodeWalker(Node *node)
 {
-	return (Plan *)PlanTreeMutator(node, VectorizeMutator, ctx);
+	return (Plan *)PlanTreeMutator(node, VectorizeMutator);
 }
 
 

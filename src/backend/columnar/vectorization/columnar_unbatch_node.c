@@ -73,6 +73,7 @@ BeginUnbatch(CustomScanState *node, EState *estate, int eflags)
 		tupdesc = node->ss.ps.ps_ResultTupleSlot->tts_tupleDescriptor;
 
 		// Convert outerPlanState tupleDesc types to 'normal' for output result slot
+
 		for (int i = 0; i < tupdesc->natts; i++)
 		{
 			Form_pg_attribute attr =  TupleDescAttr(tupdesc, i);
@@ -101,9 +102,8 @@ FetchRowFromBatch(UnbatchState *ubs)
 	{
 		for (i = 0; i < slot->tts_tupleDescriptor->natts; i++)
 		{
-			Form_pg_attribute attributeForm = TupleDescAttr(slot->tts_tupleDescriptor, i);
-			int columnTypeLength = attributeForm->attlen;
-			ubs->columnRowOffset[i] += columnTypeLength;
+			Vtype* column = (Vtype*) vslot->tts.tts_values[i];
+			ubs->columnRowOffset[i] += column->elemsize;
 		}
 		idx++;
 	}
@@ -121,13 +121,14 @@ FetchRowFromBatch(UnbatchState *ubs)
 
 		Form_pg_attribute attributeForm = TupleDescAttr(slot->tts_tupleDescriptor, i);
 
-		int8 *rawColumRawData = (int8*)column->values + ubs->columnRowOffset[i];
-
 		bool columnTypeByValue = attributeForm->attbyval;
 		int columnTypeLength = attributeForm->attlen;
 
+		int8 *rawColumRawData = (int8*)column->values + ubs->columnRowOffset[i];
 		slot->tts_values[i] = fetch_att(rawColumRawData, columnTypeByValue, columnTypeLength);
-		ubs->columnRowOffset[i] += columnTypeLength;
+
+		ubs->columnRowOffset[i] += column->elemsize;
+
 		slot->tts_isnull[i] = false;
 	}
 

@@ -261,6 +261,7 @@
 #include "utils/datum.h"
 #include "utils/dynahash.h"
 #include "utils/expandeddatum.h"
+#include "utils/hsearch.h"
 #include "utils/logtape.h"
 #include "utils/lsyscache.h"
 #include "utils/memutils.h"
@@ -271,6 +272,9 @@
 #include "columnar/vectorization/columnar_vectortupleslot.h"
 #include "columnar/vectorization/utils.h"
 #include "columnar/vectorization/vtype/vtype.h"
+
+#include "murmur3.h"
+
 /*
  * Control how many partitions are created when spilling HashAgg to
  * disk.
@@ -396,7 +400,10 @@ static void advance_transition_function(AggState *aggstate,
 static void advance_aggregates(AggState *aggstate);
 static void process_ordered_aggregate_single(AggState *aggstate,
 											 AggStatePerTrans pertrans,
-											 AggStatePerGroup pergroupstate);
+											 AggStatePerGroup pergroupstate,
+											 List **transAggHash,
+											 int transNo,
+											 MemoryContext hashContext);
 static void process_ordered_aggregate_multi(AggState *aggstate,
 											AggStatePerTrans pertrans,
 											AggStatePerGroup pergroupstate);
@@ -875,23 +882,19 @@ advance_aggregates(AggState *aggstate)
 static void
 process_ordered_aggregate_single(AggState *aggstate,
 								 AggStatePerTrans pertrans,
-								 AggStatePerGroup pergroupstate)
+								 AggStatePerGroup pergroupstate,
+								 List **transAggHash,
+								 int transNo,
+								 MemoryContext hashContext)
 {
-	Datum		oldVal = (Datum) 0;
-	bool		oldIsNull = true;
-	bool		haveOldVal = false;
-	MemoryContext workcontext = aggstate->tmpcontext->ecxt_per_tuple_memory;
 	MemoryContext oldContext;
-	bool		isDistinct = (pertrans->numDistinctCols > 0);
-	Datum		newAbbrevVal = (Datum) 0;
-	Datum		oldAbbrevVal = (Datum) 0;
+	bool isDistinct = (pertrans->numDistinctCols > 0);
+	Datum newAbbrevVal = (Datum) 0;
 	FunctionCallInfo fcinfo = pertrans->transfn_fcinfo;
-	Datum	   *newVal;
-	bool	   *isNull;
+	Datum *newVal;
+	bool *isNull;
 
 	Assert(pertrans->numDistinctCols < 2);
-
-	tuplesort_performsort(pertrans->sortstates[aggstate->current_set]);
 
 	/* Load the column into argument 1 (arg 0 will be transition value) */
 	newVal = &fcinfo->args[1].value;
@@ -903,53 +906,107 @@ process_ordered_aggregate_single(AggState *aggstate,
 	 * pfree them when they are no longer needed.
 	 */
 
-	while (tuplesort_getdatum(pertrans->sortstates[aggstate->current_set],
-							  true, newVal, isNull, &newAbbrevVal))
+	tuplesort_performsort(pertrans->sortstates[aggstate->current_set]);
+
+	tuplesort_getdatum(pertrans->sortstates[aggstate->current_set],
+					   true, newVal, isNull, &newAbbrevVal);
+
+	Vtype *column = (Vtype *) DatumGetPointer(*newVal);
+		
+	oldContext = MemoryContextSwitchTo(hashContext);
+	
+	if (isDistinct)
 	{
-		/*
-		 * Clear and select the working context for evaluation of the equality
-		 * function and transition function.
-		 */
-		MemoryContextReset(workcontext);
-		oldContext = MemoryContextSwitchTo(workcontext);
 
-		/*
-		 * If DISTINCT mode, and not distinct from prior, skip it.
-		 */
-		if (isDistinct &&
-			haveOldVal &&
-			((oldIsNull && *isNull) ||
-			 (!oldIsNull && !*isNull &&
-			  oldAbbrevVal == newAbbrevVal &&
-			  DatumGetBool(FunctionCall2Coll(&pertrans->equalfnOne,
-											 pertrans->aggCollation,
-											 oldVal, *newVal)))))
+		HTAB *hash;
+		ListCell *lc;
+		AggTransHashState *aggTransHashStateEntry;
+		bool aggTransHashEntryFound = false;
+
+		foreach(lc, (List *) *transAggHash)
 		{
-			/* equal to prior, so forget this one */
-			if (!pertrans->inputtypeByVal && !*isNull)
-				pfree(DatumGetPointer(*newVal));
-		}
-		else
-		{
-			advance_transition_function(aggstate, pertrans, pergroupstate);
-			/* forget the old value, if any */
-			if (!oldIsNull && !pertrans->inputtypeByVal)
-				pfree(DatumGetPointer(oldVal));
-			/* and remember the new one for subsequent equality checks */
-			oldVal = *newVal;
-			oldAbbrevVal = newAbbrevVal;
-			oldIsNull = *isNull;
-			haveOldVal = true;
+			aggTransHashStateEntry = lfirst(lc);
+			if (aggTransHashStateEntry->transno == transNo)
+			{
+				hash = aggTransHashStateEntry->hash;
+				aggTransHashEntryFound = true;
+
+				break;
+			}
 		}
 
-		MemoryContextSwitchTo(oldContext);
+		if (!aggTransHashEntryFound)
+		{
+			AggTransHashState *newAggTransHashState = palloc0(sizeof(AggTransHashState));
+			HASHCTL	hash_ctl;
+
+			if (column->elemval)
+			{
+				hash_ctl.keysize = column->elemsize;
+			}
+			else
+			{
+				hash_ctl.keysize = 4;
+			}
+
+			hash_ctl.entrysize = column->elemsize;
+			hash_ctl.hcxt = hashContext;
+			
+			hash = hash_create("directAggHashLookup", 8192, &hash_ctl, HASH_ELEM | HASH_BLOBS);
+
+			newAggTransHashState->transno = transNo;
+			newAggTransHashState->hash = hash;
+
+			*transAggHash = lappend(*transAggHash, newAggTransHashState);
+		}
+
+		for (int i = 0; i < column->dim; i++)
+		{
+			bool foundEntry = false;
+
+			int8 *pos = (int8*)column->values + column->elemsize*i;
+
+			int32 calculatedHash = 0;
+			int32 secondCalculatedHash = 0;
+			
+			if (column->elemval)
+			{
+				calculatedHash = get_hash_value(hash, (const void *)pos);
+			}
+			else
+			{
+				Datum *variableColumn = (Datum *) pos;
+				uint32 size = VARSIZE(*variableColumn);
+				calculatedHash = hash_bytes((const void *)((int8  *)*variableColumn + 4), size - 4);
+
+				// For varlen type calculate second hash to lower collision (murmur3)
+		
+				MurmurHash3_x86_32((const void *)((int8  *)*variableColumn + 4), size - 4,
+								   0x85ebca6b, &secondCalculatedHash);
+
+				pos = (int8 *) &secondCalculatedHash;
+			}
+			
+			hash_search_with_hash_value((HTAB *)hash, (const void *)pos, calculatedHash, HASH_FIND, &foundEntry);
+			
+			if (foundEntry)
+			{
+				column->isDistinct[i] = false;
+			}
+			else
+			{
+				hash_search_with_hash_value(hash, (const void *) pos, calculatedHash, HASH_ENTER, &foundEntry);
+			}
+		}
 	}
 
-	if (!oldIsNull && !pertrans->inputtypeByVal)
-		pfree(DatumGetPointer(oldVal));
+	// HYDRA: what about order ?
 
-	tuplesort_end(pertrans->sortstates[aggstate->current_set]);
-	pertrans->sortstates[aggstate->current_set] = NULL;
+	MemoryContextSwitchTo(oldContext);
+
+	advance_transition_function(aggstate, pertrans, pergroupstate);
+
+	tuplesort_reset(pertrans->sortstates[aggstate->current_set]);
 }
 
 /*
@@ -1326,28 +1383,28 @@ finalize_aggregates(AggState *aggstate,
 	 * If there were any DISTINCT and/or ORDER BY aggregates, sort their
 	 * inputs and run the transition functions.
 	 */
-	for (transno = 0; transno < aggstate->numtrans; transno++)
-	{
-		AggStatePerTrans pertrans = &aggstate->pertrans[transno];
-		AggStatePerGroup pergroupstate;
+	// for (transno = 0; transno < aggstate->numtrans; transno++)
+	// {
+	// 	AggStatePerTrans pertrans = &aggstate->pertrans[transno];
+	// 	AggStatePerGroup pergroupstate;
 
-		pergroupstate = &pergroup[transno];
+	// 	pergroupstate = &pergroup[transno];
 
-		if (pertrans->numSortCols > 0)
-		{
-			Assert(aggstate->aggstrategy != AGG_HASHED &&
-				   aggstate->aggstrategy != AGG_MIXED);
+	// 	if (pertrans->numSortCols > 0)
+	// 	{
+	// 		Assert(aggstate->aggstrategy != AGG_HASHED &&
+	// 			   aggstate->aggstrategy != AGG_MIXED);
 
-			if (pertrans->numInputs == 1)
-				process_ordered_aggregate_single(aggstate,
-												 pertrans,
-												 pergroupstate);
-			else
-				process_ordered_aggregate_multi(aggstate,
-												pertrans,
-												pergroupstate);
-		}
-	}
+	// 		if (pertrans->numInputs == 1)
+	// 			process_ordered_aggregate_single(aggstate,
+	// 											 pertrans,
+	// 											 pergroupstate);
+	// 		else
+	// 			process_ordered_aggregate_multi(aggstate,
+	// 											pertrans,
+	// 											pergroupstate);
+	// 	}
+	// }
 
 	/*
 	 * Run the final functions.
@@ -2162,7 +2219,7 @@ lookup_hash_entries(AggState *aggstate)
  *	  the result tuple.
  */
 static TupleTableSlot *
-ExecAgg(VectorAggState *vectoraggstate)
+VExecAgg(VectorAggState *vectoraggstate)
 {
 	AggState		*node = vectoraggstate->aggstate;
 	TupleTableSlot  *result = NULL;
@@ -2202,6 +2259,7 @@ agg_retrieve_direct(VectorAggState *vectoraggstate)
 {
 	AggState 	*aggstate = vectoraggstate->aggstate;
 	Agg		   	*node = aggstate->phase->aggnode;
+
 	ExprContext *econtext;
 	ExprContext *tmpcontext;
 	AggStatePerAgg peragg;
@@ -2375,6 +2433,7 @@ agg_retrieve_direct(VectorAggState *vectoraggstate)
 			if (aggstate->grp_firstTuple == NULL)
 			{
 				outerslot = fetch_input_tuple(aggstate);
+
 				if (!TupIsNull(outerslot))
 				{
 					/*
@@ -2448,6 +2507,8 @@ agg_retrieve_direct(VectorAggState *vectoraggstate)
 				// tmpcontext->ecxt_outertuple = firstSlot;
 				tmpcontext->ecxt_outertuple = outerslot;
 
+				List *directHashList = NIL;
+
 				/*
 				 * Process each outer-plan tuple, and then fetch the next one,
 				 * until we exhaust the outer plan or cross a group boundary.
@@ -2467,10 +2528,49 @@ agg_retrieve_direct(VectorAggState *vectoraggstate)
 					/* Advance the aggregates (or combine functions) */
 					advance_aggregates(aggstate);
 
+					/*
+					* If there were any DISTINCT and/or ORDER BY aggregates, sort their
+					* inputs and run the transition functions.
+					*/
+					int	transno;
+
+					currentSet = aggstate->projected_set;
+
+					prepare_projection_slot(aggstate, econtext->ecxt_outertuple, currentSet);
+
+					select_current_set(aggstate, currentSet, false);
+
+					for (transno = 0; transno < aggstate->numtrans; transno++)
+					{
+						AggStatePerTrans pertrans = &aggstate->pertrans[transno];
+						AggStatePerGroup pergroupstate;
+
+						pergroupstate = &pergroups[currentSet][transno];
+
+						if (pertrans->numSortCols > 0)
+						{
+							Assert(aggstate->aggstrategy != AGG_HASHED &&
+								aggstate->aggstrategy != AGG_MIXED);
+
+							if (pertrans->numInputs == 1)
+								process_ordered_aggregate_single(aggstate,
+																 pertrans,
+																 pergroupstate,
+																 &directHashList,
+																 transno,
+																 vectoraggstate->vectorAggStateContext);
+							else
+								process_ordered_aggregate_multi(aggstate,
+																pertrans,
+																pergroupstate);
+						}
+					}
+
 					/* Reset per-input-tuple context after each tuple */
 					ResetExprContext(tmpcontext);
 
 					outerslot = fetch_input_tuple(aggstate);
+
 					if (TupIsNull(outerslot))
 					{
 						/* no more outer-plan tuples available */
@@ -2491,6 +2591,7 @@ agg_retrieve_direct(VectorAggState *vectoraggstate)
 							break;
 						}
 					}
+
 					/* set up for next advance_aggregates call */
 					tmpcontext->ecxt_outertuple = outerslot;
 
@@ -2521,6 +2622,11 @@ agg_retrieve_direct(VectorAggState *vectoraggstate)
 			 */
 			econtext->ecxt_outertuple = firstSlot;
 		}
+
+		// Cleanup custom MemoryConext
+		MemoryContextReset(vectoraggstate->vectorAggStateContext);
+
+		ResetExprContext(tmpcontext);
 
 		Assert(aggstate->projected_set >= 0);
 
@@ -3307,8 +3413,8 @@ hashagg_reset_spill_state(AggState *aggstate)
  *
  * -----------------
  */
-AggState *
-ExecInitAgg(Agg *node, EState *estate, int eflags)
+static AggState *
+VExecInitAgg(Agg *node, EState *estate, int eflags)
 {
 	AggState   *aggstate;
 	AggStatePerAgg peraggs;
@@ -4430,8 +4536,8 @@ GetAggInitVal(Datum textInitVal, Oid transtype)
 	return initVal;
 }
 
-void
-ExecEndAgg(AggState *node)
+static void
+VExecEndAgg(AggState *node)
 {
 	PlanState  *outerPlan;
 	int			transno;
@@ -4952,7 +5058,12 @@ BeginVectorAgg(CustomScanState *css, EState *estate, int eflags)
 	ExecClearTuple(css->ss.ps.ps_ResultTupleSlot);
 	ExecClearTuple(css->ss.ss_ScanTupleSlot);
 
-	vas->aggstate = ExecInitAgg(node, estate, eflags);
+	vas->vectorAggStateContext = 
+		AllocSetContextCreate(CurrentMemoryContext,
+							  "Vector Agg Node Context",
+							  ALLOCSET_DEFAULT_SIZES);
+
+	vas->aggstate = VExecInitAgg(node, estate, eflags);
 
 	InitAggResultSlot(vas, estate);
 
@@ -4969,48 +5080,21 @@ BeginVectorAgg(CustomScanState *css, EState *estate, int eflags)
 static TupleTableSlot *
 ExecVectorAgg(CustomScanState *node)
 {
-	return ExecAgg((VectorAggState *)node);
+	return VExecAgg((VectorAggState *)node);
 }
 
 
 static void
 EndVectorAgg(CustomScanState *node)
 {
-	ExecEndAgg(((VectorAggState *)node)->aggstate);
+	VExecEndAgg(((VectorAggState *)node)->aggstate);
 }
+
 
 static void
 ExplainAggNode(CustomScanState *node, List *ancestors, ExplainState *es)
 {
-	// VectorScanState *vectorScanState = (VectorScanState *) node;
 
-	// List *context = set_deparse_context_planstate(
-	// 	es->deparse_cxt, (Node *) &node->ss.ps, ancestors);
-
-	// List *projectedColumns = ColumnarVarNeeded(&vectorScanState->css);
-	// const char *projectedColumnsStr = ColumnarProjectedColumnsStr(
-	// 	context, projectedColumns);
-	// ExplainPropertyText("Columnar Projected Columns",
-	// 					projectedColumnsStr, es);
-
-	// CustomScan *cscan = castNode(CustomScan, node->ss.ps.plan);
-	// List *chunkGroupFilter = lsecond(cscan->custom_exprs);
-	// if (chunkGroupFilter != NULL)
-	// {
-	// 	const char *pushdownClausesStr = ColumnarPushdownClausesStr(
-	// 		context, chunkGroupFilter);
-	// 	ExplainPropertyText("Columnar Chunk Group Filters",
-	// 						pushdownClausesStr, es);
-
-	// 	ColumnarScanDesc columnarScanDesc =
-	// 		(ColumnarScanDesc) node->ss.ss_currentScanDesc;
-	// 	if (columnarScanDesc != NULL)
-	// 	{
-	// 		ExplainPropertyInteger(
-	// 			"Columnar Chunk Groups Removed by Filter",
-	// 			NULL, ColumnarScanChunkGroupsFiltered(columnarScanDesc), es);
-	// 	}
-	// }
 }
 
 

@@ -17,6 +17,7 @@ DROP TYPE IF EXISTS vint2 cascade;
 DROP TYPE IF EXISTS vint4 cascade;
 DROP TYPE IF EXISTS vint8 cascade;
 DROP TYPE IF EXISTS vbool cascade;
+DROP TYPE IF EXISTS vtext cascade;
 
 -- create vectorized types
 
@@ -44,7 +45,12 @@ CREATE TYPE vbool;
 CREATE FUNCTION vboolin(cstring) RETURNS vbool AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE STRICT;
 CREATE FUNCTION vboolout(vbool) RETURNS cstring AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE STRICT;
 CREATE TYPE vbool ( INPUT = vboolin, OUTPUT = vboolout, element = bool, storage =plain, SUBSCRIPT = raw_array_subscript_handler );
-  
+
+CREATE TYPE vtext;
+CREATE FUNCTION vtextin(cstring) RETURNS vtext AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE STRICT;
+CREATE FUNCTION vtextout(vtext) RETURNS cstring AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE STRICT;
+CREATE TYPE vtext ( INPUT = vtextin, OUTPUT = vtextout, storage=plain, internallength = 8, alignment = double, PASSEDBYVALUE);
+
 -- create operators for the vectorized types
 
     -- vint4
@@ -54,6 +60,11 @@ CREATE OPERATOR < ( leftarg = vint4, rightarg = int4, procedure = vint4int4lt, c
 
 CREATE FUNCTION vint4vint4pl(vint4, vint4) RETURNS vint4 AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE STRICT;
 CREATE OPERATOR + ( leftarg = vint4, rightarg = vint4, procedure = vint4vint4pl, commutator = - );
+
+    -- vint8
+
+CREATE FUNCTION vint8int8eq(vint8, int8) RETURNS vbool AS 'MODULE_PATHNAME' LANGUAGE C IMMUTABLE STRICT;
+CREATE OPERATOR = ( leftarg = vint8, rightarg = int8, procedure = vint8int8eq, commutator = <> );
 
     -- vbool
     

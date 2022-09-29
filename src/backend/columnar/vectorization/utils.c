@@ -30,7 +30,7 @@ static HTAB *hashMapV2N = NULL;
 
 #define TYPE_HASH_TABLE_SIZE 64
 
-#define BUILTIN_TYPE_NUM 5
+#define BUILTIN_TYPE_NUM 6
 
 const char *typenames[] = {
 	"any",
@@ -38,6 +38,7 @@ const char *typenames[] = {
 	"int4", 
 	"int8", 
 	"bool",
+	"text",
 };
 
 const char *vtypenames[] = {
@@ -46,6 +47,7 @@ const char *vtypenames[] = {
 	"vint4", 
 	"vint8", 
 	"vbool",
+	"vtext"
 };
 
 /*

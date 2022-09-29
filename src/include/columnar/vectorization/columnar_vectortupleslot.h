@@ -16,7 +16,7 @@
 #include "nodes/execnodes.h"
 #include "storage/bufmgr.h"
 
-#define VECTOR_BATCH_SIZE 16384 // 16384 // 8192
+#define VECTOR_BATCH_SIZE 8192 // 16384
 
 typedef struct VectorTupleSlot
 {

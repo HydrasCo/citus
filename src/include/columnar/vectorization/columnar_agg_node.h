@@ -27,7 +27,14 @@ typedef struct VectorAggState
 	/* Attributes for vectorized aggregate */
 	AggState		*aggstate;
 	TupleTableSlot	*vectorResultSlot;
+	MemoryContext	vectorAggStateContext;
 } VectorAggState;
+
+typedef struct AggTransHashState
+{
+    int transno;
+    HTAB *hash;
+} AggTransHashState;
 
 extern CustomScan *make_vectoraggscan_customscan(void);
 extern void columnar_agg_node_register(void);

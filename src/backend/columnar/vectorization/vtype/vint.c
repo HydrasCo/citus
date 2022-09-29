@@ -40,9 +40,19 @@ Datum vint8inc(PG_FUNCTION_ARGS)
 		for (int n = 0; n < number_iterations; n++)
 		{
 			bool *b = (bool*) batch->skipref + pos;
+			
 			__m256i values = _mm256_loadu_si256((__m256i const *) b);
-			__m256i cmp_result = _mm256_cmpeq_epi8(values, _mm256_setzero_si256());
+
+			bool *c = (bool*) batch->isDistinct + pos;
+
+			__m256i distinctValues = _mm256_loadu_si256((__m256i const *) c);
+
+			__m256i cntResult =  _mm256_and_si256(values, distinctValues);
+
+			__m256i cmp_result = _mm256_cmpeq_epi8(cntResult, _mm256_setzero_si256());
+			
 			int binary_result = _mm256_movemask_epi8(cmp_result);
+			
 			result += _mm_popcnt_u32(binary_result);
 			pos += 32;
 		}
@@ -57,7 +67,7 @@ Datum vint8inc(PG_FUNCTION_ARGS)
 			if (batch->isnull[i])
 				continue;
 
-			if (!batch->skipref[i]) 
+			if (!batch->skipref[i] && batch->isDistinct[i]) 
 				result++;
 		}
 #ifdef SIMD
@@ -65,6 +75,68 @@ Datum vint8inc(PG_FUNCTION_ARGS)
 #endif
 
 	PG_RETURN_INT64(result);
+}
+
+PG_FUNCTION_INFO_V1(vint8int8eq);
+Datum vint8int8eq(PG_FUNCTION_ARGS)
+{
+	vint8 *arg1 = (vint8*)PG_GETARG_POINTER(0);
+	int64 arg2 = PG_GETARG_INT64(1);
+
+	vbool *res = build_vtype(BOOLOID, 1, VECTOR_BATCH_SIZE, arg1->skipref);
+
+#ifdef SIMD
+	if (columnar_use_simd)
+	{
+		__m256i cmp_values = _mm256_set1_epi64x(arg2);
+
+		int number_iterations = arg1->dim / 4 + (arg1->dim % 4 ?  1 : 0);
+
+		int pos = 0;
+
+		for (int n = 0; n < number_iterations; n++)
+		{
+			int8 *b = (int8*) arg1->values + pos;
+
+			bool *c = (bool*) res->values + pos;
+
+			__m256i values = _mm256_loadu_si256((__m256i const *)b);
+
+			__m256i cmp_result = _mm256_cmpgt_epi64(cmp_values, values);
+
+			c[0] = _mm256_extract_epi8(cmp_result, 0);
+			c[1] = _mm256_extract_epi8(cmp_result, 4);  
+			c[2] = _mm256_extract_epi8(cmp_result, 8);  
+			c[3] = _mm256_extract_epi8(cmp_result, 12);
+
+			pos += 8;
+		}
+	}
+	else
+	{
+#endif
+		int size = 0; 
+		int i = 0;
+		size = arg1->dim;
+
+		while(i < size) 
+		{
+			res->isnull[i] = arg1->isnull[i];
+
+			if(!arg1->isnull[i]) 
+			{
+				int64 *a = (int64*) arg1->values + i;
+				bool *c = (bool*) res->values + i;
+				*c = (bool) (*a == arg2);
+			}
+
+			i++; 
+		}
+#ifdef SIMD
+	}
+#endif
+	res->dim = arg1->dim; 
+	PG_RETURN_POINTER(res);
 	
 }
 
@@ -84,8 +156,6 @@ vint4int4lt(PG_FUNCTION_ARGS)
 		__m256i cmp_values = _mm256_set1_epi32(arg2);
 
 		int number_iterations = arg1->dim / 8 + (arg1->dim % 32 ?  1 : 0);
-
-		if (arg1->dim % 8) number_iterations++;
 
 		int pos = 0;
 

@@ -54,15 +54,19 @@ TYPE_HEADER(int2, INT2OID)
 TYPE_HEADER(int4, INT4OID)
 TYPE_HEADER(int8, INT8OID)
 TYPE_HEADER(bool, BOOLOID)
+TYPE_HEADER(text, TEXTOID)
 
 // Vector column
 
 typedef struct Vtype
 {
 	Oid		elemtype;
+	int     elemsize;
+	bool	elemval;
 	int		dim;
 	Datum	*values;
 	bool    isnull[VECTOR_BATCH_SIZE];
+	bool    isDistinct[VECTOR_BATCH_SIZE];
 	bool    *skipref;
 } Vtype;
 
