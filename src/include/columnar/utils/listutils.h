@@ -172,7 +172,7 @@ typedef struct ListCellAndListWrapper
 #endif
 
 static inline List*
-CustomBuildTlist(List* tlist)
+CustomBuildTlist(List* tlist, Index varNo)
 {
 	List		*result_tlist = NIL;
 	ListCell	*lc;
@@ -181,7 +181,7 @@ CustomBuildTlist(List* tlist)
 	{
 		TargetEntry	*tle = (TargetEntry *) lfirst(lc);
 
-		Var *var = makeVar(INDEX_VAR,	/* point to subplan's elements */
+		Var *var = makeVar(varNo,
 						   tle->resno,
 						   exprType((Node *) tle->expr),
 						   exprTypmod((Node *) tle->expr),

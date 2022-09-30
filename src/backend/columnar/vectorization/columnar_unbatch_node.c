@@ -205,11 +205,11 @@ CreateUnbatchState(CustomScan *custom_plan)
 
 
 Plan *
-columnar_add_unbatch_node(Plan *node)
+columnar_add_unbatch_plan(Plan *node)
 {
 	CustomScan *convert = makeNode(CustomScan);
 	
-	convert->scan.plan.targetlist = CustomBuildTlist(node->targetlist);
+	convert->scan.plan.targetlist = CustomBuildTlist(node->targetlist, INDEX_VAR);
 	convert->custom_scan_tlist = node->targetlist;
 	convert->methods = &UnbatchNodeMethods;
 	convert->scan.plan.lefttree = node;
@@ -218,6 +218,14 @@ columnar_add_unbatch_node(Plan *node)
 	return &convert->scan.plan;
 }
 
+
+CustomScan *
+columnar_create_unbatch_node(void)
+{
+	CustomScan *cscan = (CustomScan *) makeNode(CustomScan);
+	cscan->methods = &UnbatchNodeMethods;
+	return cscan;
+}
 
 void
 columnar_unbatch_node_register(void)

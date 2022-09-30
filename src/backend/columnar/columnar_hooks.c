@@ -117,6 +117,8 @@ static void AddColumnarScanPathsRec(PlannerInfo *root, RelOptInfo *rel,
 
 /* planner_hook */
 
+static bool unbatchNodeAdded = false;
+
 static PlannedStmt *
 ColumnarVectorPlanerHook(Query *parse,
 						 const char *query_string,
@@ -149,6 +151,8 @@ ColumnarVectorPlanerHook(Query *parse,
 		List		*subplans = NULL;
 		ListCell	*cell;
 
+		unbatchNodeAdded = false;
+
 		stmt->planTree = ReplacePlanNodeWalker((Node *) stmt->planTree);
 
 		foreach(cell, stmt->subplans)
@@ -159,11 +163,14 @@ ColumnarVectorPlanerHook(Query *parse,
 		}
 		stmt->subplans = subplans;
 
-		/*
-		 * vectorize executor exchange batch of tuples between plan nodes
-		 * add unbatch node at top to convert batch to row and send to client.
-		 */
-		stmt->planTree = columnar_add_unbatch_node(stmt->planTree);
+		if (!unbatchNodeAdded)
+		{
+			/*
+			* vectorize executor exchange batch of tuples between plan nodes
+			* add unbatch node at top to convert batch to row and send to client.
+			*/
+			stmt->planTree = columnar_add_unbatch_plan(stmt->planTree);
+		}
 	}
 	PG_CATCH();
 	{
@@ -426,22 +433,22 @@ PlanTreeMutator(Node *node, Node *(*mutator) ())
 			{
 				Agg *oldAgg = (Agg *) node;
 				Agg	*newAgg;
-				CustomScan *aggScanNode;
+				CustomScan *aggNode;
 
-				if (oldAgg->aggstrategy != AGG_PLAIN && oldAgg->aggstrategy != AGG_HASHED)
-					elog(ERROR, "Non plain agg is not supported");
+				// if (oldAgg->aggstrategy != AGG_PLAIN && oldAgg->aggstrategy != AGG_HASHED)
+				// 	elog(ERROR, "Non plain agg is not supported");
 
-				aggScanNode = make_vectoraggscan_customscan();
+				aggNode = columnar_create_agg_node();
 
 				FLATCOPY(newAgg, oldAgg, Agg);
 
-				aggScanNode->custom_plans = lappend(aggScanNode->custom_plans, newAgg);
-				aggScanNode->scan.plan.targetlist = CustomBuildTlist(newAgg->plan.targetlist);
-				aggScanNode->custom_scan_tlist = newAgg->plan.targetlist;
+				aggNode->custom_plans = lappend(aggNode->custom_plans, newAgg);
+				aggNode->scan.plan.targetlist = CustomBuildTlist(newAgg->plan.targetlist, INDEX_VAR);
+				aggNode->custom_scan_tlist = newAgg->plan.targetlist;
 
 				SCANMUTATE(newAgg, oldAgg);
 
-				return (Node *) aggScanNode;
+				return (Node *) aggNode;
 			}
 
 		case T_Const:
@@ -572,6 +579,29 @@ PlanTreeMutator(Node *node, Node *(*mutator) ())
 				MUTATE(newWindowFunc->aggfilter, oldWindowFunc->aggfilter, Expr *);
 
 				return (Node *) newWindowFunc;
+			}
+
+		case T_Limit:
+			{
+				Limit *limitNode = (Limit *) node;
+				
+				CustomScan *unbatchNode = columnar_create_unbatch_node();
+
+				unbatchNode->custom_scan_tlist = limitNode->plan.targetlist;	
+				unbatchNode->scan.plan.lefttree = limitNode->plan.lefttree;
+
+				SCANMUTATE(&unbatchNode->scan.plan, &limitNode->plan);
+
+				unbatchNode->scan.plan.targetlist = 
+					CustomBuildTlist(limitNode->plan.targetlist, INDEX_VAR);
+
+				unbatchNode->scan.plan.righttree = NULL;
+
+				limitNode->plan.lefttree = &unbatchNode->scan.plan;
+
+				unbatchNodeAdded = true;
+
+				return (Node *) limitNode;
 			}
 
 	  default:

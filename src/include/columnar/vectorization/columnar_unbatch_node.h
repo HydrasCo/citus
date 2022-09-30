@@ -15,7 +15,8 @@
 
 #include "nodes/plannodes.h"
 
-extern Plan *columnar_add_unbatch_node(Plan *node);
+extern Plan * columnar_add_unbatch_plan(Plan *node);
+extern CustomScan * columnar_create_unbatch_node(void);
 extern void columnar_unbatch_node_register(void);
 
 #endif

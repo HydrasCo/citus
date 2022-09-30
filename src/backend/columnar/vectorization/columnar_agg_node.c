@@ -962,6 +962,9 @@ process_ordered_aggregate_single(AggState *aggstate,
 
 		for (int i = 0; i < column->dim; i++)
 		{
+			if (column->skipref[i])
+				continue;
+
 			bool foundEntry = false;
 
 			int8 *pos = (int8*)column->values + column->elemsize*i;
@@ -5142,9 +5145,9 @@ InitAggResultSlot(VectorAggState *vas, EState *estate)
 
 
 CustomScan *
-make_vectoraggscan_customscan(void)
+columnar_create_agg_node(void)
 {
-	CustomScan *cscan = (CustomScan *)makeNode(CustomScan);
+	CustomScan *cscan = (CustomScan *) makeNode(CustomScan);
 	cscan->methods = &VectorAggNodeMethods;
 	return cscan;
 }

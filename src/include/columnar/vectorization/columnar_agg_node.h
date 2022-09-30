@@ -36,7 +36,7 @@ typedef struct AggTransHashState
     HTAB *hash;
 } AggTransHashState;
 
-extern CustomScan *make_vectoraggscan_customscan(void);
+extern CustomScan *columnar_create_agg_node(void);
 extern void columnar_agg_node_register(void);
 
 #endif
