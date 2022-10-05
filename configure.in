@@ -42,7 +42,7 @@ $AWK '{printf "%d%02d%02d", $1, $2, (NF >= 3) ? $3 : 0}'`"]
 AC_DEFINE_UNQUOTED(CITUS_VERSION_NUM, $CITUS_VERSION_NUM, [Citus version as a number])
 
 # CITUS_EXTENSIONVERSION definition
-[CITUS_EXTENSIONVERSION="`grep '^default_version' $srcdir/src/backend/distributed/citus.control | cut -d\' -f2`"]
+[CITUS_EXTENSIONVERSION="`grep '^default_version' $srcdir/src/backend/columnar/columnar.control | cut -d\' -f2`"]
 AC_DEFINE_UNQUOTED([CITUS_EXTENSIONVERSION], "$CITUS_EXTENSIONVERSION", [Extension version expected by this Citus build])
 
 # Re-check for flex. That allows to compile citus against a postgres

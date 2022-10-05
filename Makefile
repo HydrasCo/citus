@@ -1,26 +1,15 @@
 # Citus toplevel Makefile
 
-REPO ?= hydra/columnar
-TAG ?= latest
-.PHONY: docker_build
-
-docker_build:
-	docker build -t $(REPO):$(TAG) .
-
-citus_subdir = .
-citus_top_builddir = .
-extension_dir = $(shell $(PG_CONFIG) --sharedir)/extension
-
-PGXS := $(shell $(PG_CONFIG) --pgxs)
-override PG_CPPFLAGS += -I$(CURDIR)/include
-include $(PGXS)
-
 # Hint that configure should be run first
 ifeq (,$(wildcard Makefile.global))
   $(error ./configure needs to be run before compiling Citus)
 endif
 
 include Makefile.global
+
+citus_subdir = .
+citus_top_builddir = .
+extension_dir = $(shell $(PG_CONFIG) --sharedir)/extension
 
 all: extension
 
