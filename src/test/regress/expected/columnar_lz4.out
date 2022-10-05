@@ -9,22 +9,22 @@ SET columnar.compression TO 'lz4';
 CREATE TABLE test_lz4 (a int, b text, c int) USING columnar;
 INSERT INTO test_lz4 SELECT floor(i / 1000), floor(i / 10)::text, 4 FROM generate_series(1, 10000) i;
 SELECT count(*) FROM test_lz4;
- count
----------------------------------------------------------------------
+ count 
+-------
  10000
 (1 row)
 
 INSERT INTO test_lz4 SELECT floor(i / 2), floor(i / 10)::text, 5 FROM generate_series(1000, 11000) i;
 SELECT count(*) FROM test_lz4;
- count
----------------------------------------------------------------------
+ count 
+-------
  20001
 (1 row)
 
 SELECT pg_relation_size('test_lz4') AS size_lz4 \gset
 SELECT DISTINCT * FROM test_lz4 ORDER BY a, b, c LIMIT 5;
- a | b  | c
----------------------------------------------------------------------
+ a | b  | c 
+---+----+---
  0 | 0  | 4
  0 | 1  | 4
  0 | 10 | 4
@@ -39,8 +39,8 @@ INSERT INTO test_pglz SELECT * FROM test_lz4;
 SELECT pg_relation_size('test_pglz') AS size_pglz \gset
 -- verify that pglz & lz4 resulted in different compression ratios
 SELECT :size_pglz <> :size_lz4;
- ?column?
----------------------------------------------------------------------
+ ?column? 
+----------
  t
 (1 row)
 
@@ -48,15 +48,15 @@ SELECT :size_pglz <> :size_lz4;
 VACUUM FULL test_lz4;
 ANALYZE test_lz4;
 SELECT count(DISTINCT test_lz4.*) FROM test_lz4;
- count
----------------------------------------------------------------------
+ count 
+-------
   6002
 (1 row)
 
 TRUNCATE test_lz4;
 SELECT count(DISTINCT test_lz4.*) FROM test_lz4;
- count
----------------------------------------------------------------------
+ count 
+-------
      0
 (1 row)
 

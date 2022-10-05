@@ -3,7 +3,7 @@ SET search_path TO columnar_test_helpers;
 
 CREATE FUNCTION columnar_relation_storageid(relid oid) RETURNS bigint
     LANGUAGE C STABLE STRICT
-    AS 'citus', $$columnar_relation_storageid$$;
+    AS 'columnar', $$columnar_relation_storageid$$;
 
 CREATE OR REPLACE FUNCTION columnar_storage_info(
     rel regclass,
@@ -14,7 +14,7 @@ CREATE OR REPLACE FUNCTION columnar_storage_info(
     reserved_row_number OUT int8,
     reserved_offset OUT int8)
   STRICT
-  LANGUAGE c AS 'citus', $$columnar_storage_info$$;
+  LANGUAGE c AS 'columnar', $$columnar_storage_info$$;
 
 CREATE FUNCTION compression_type_supported(type text) RETURNS boolean
 AS $$
@@ -79,7 +79,7 @@ CREATE OR REPLACE FUNCTION columnar_store_memory_stats(
 		          OUT WriteStateContext BIGINT)
     RETURNS RECORD
     LANGUAGE C STRICT VOLATILE
-    AS 'citus', $$columnar_store_memory_stats$$;
+    AS 'columnar', $$columnar_store_memory_stats$$;
 
 CREATE FUNCTION top_memory_context_usage()
 	RETURNS BIGINT AS $$

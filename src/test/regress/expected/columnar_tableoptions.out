@@ -6,68 +6,68 @@ INSERT INTO table_options SELECT generate_series(1,100);
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                 10000 |           150000 |                 3 | none
 (1 row)
 
 -- test changing the compression
 SELECT alter_columnar_table_set('table_options', compression => 'pglz');
- alter_columnar_table_set
----------------------------------------------------------------------
-
+ alter_columnar_table_set 
+--------------------------
+ 
 (1 row)
 
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                 10000 |           150000 |                 3 | pglz
 (1 row)
 
 -- test changing the compression level
 SELECT alter_columnar_table_set('table_options', compression_level => 5);
- alter_columnar_table_set
----------------------------------------------------------------------
-
+ alter_columnar_table_set 
+--------------------------
+ 
 (1 row)
 
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                 10000 |           150000 |                 5 | pglz
 (1 row)
 
 -- test changing the chunk_group_row_limit
 SELECT alter_columnar_table_set('table_options', chunk_group_row_limit => 2000);
- alter_columnar_table_set
----------------------------------------------------------------------
-
+ alter_columnar_table_set 
+--------------------------
+ 
 (1 row)
 
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                  2000 |           150000 |                 5 | pglz
 (1 row)
 
 -- test changing the chunk_group_row_limit
 SELECT alter_columnar_table_set('table_options', stripe_row_limit => 4000);
- alter_columnar_table_set
----------------------------------------------------------------------
-
+ alter_columnar_table_set 
+--------------------------
+ 
 (1 row)
 
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                  2000 |             4000 |                 5 | pglz
 (1 row)
 
@@ -76,23 +76,23 @@ VACUUM FULL table_options;
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                  2000 |             4000 |                 5 | pglz
 (1 row)
 
 -- set all settings at the same time
 SELECT alter_columnar_table_set('table_options', stripe_row_limit => 8000, chunk_group_row_limit => 4000, compression => 'none', compression_level => 7);
- alter_columnar_table_set
----------------------------------------------------------------------
-
+ alter_columnar_table_set 
+--------------------------
+ 
 (1 row)
 
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                  4000 |             8000 |                 7 | none
 (1 row)
 
@@ -101,8 +101,8 @@ VACUUM table_options;
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                  4000 |             8000 |                 7 | none
 (1 row)
 
@@ -111,8 +111,8 @@ VACUUM FULL table_options;
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                  4000 |             8000 |                 7 | none
 (1 row)
 
@@ -121,8 +121,8 @@ TRUNCATE table_options;
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                  4000 |             8000 |                 7 | none
 (1 row)
 
@@ -130,8 +130,8 @@ ALTER TABLE table_options ALTER COLUMN a TYPE bigint;
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                  4000 |             8000 |                 7 | none
 (1 row)
 
@@ -144,64 +144,64 @@ SET columnar.compression_level TO 11;
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                  4000 |             8000 |                 7 | none
 (1 row)
 
 SELECT alter_columnar_table_reset('table_options', chunk_group_row_limit => true);
- alter_columnar_table_reset
----------------------------------------------------------------------
-
+ alter_columnar_table_reset 
+----------------------------
+ 
 (1 row)
 
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                  1000 |             8000 |                 7 | none
 (1 row)
 
 SELECT alter_columnar_table_reset('table_options', stripe_row_limit => true);
- alter_columnar_table_reset
----------------------------------------------------------------------
-
+ alter_columnar_table_reset 
+----------------------------
+ 
 (1 row)
 
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                  1000 |            10000 |                 7 | none
 (1 row)
 
 SELECT alter_columnar_table_reset('table_options', compression => true);
- alter_columnar_table_reset
----------------------------------------------------------------------
-
+ alter_columnar_table_reset 
+----------------------------
+ 
 (1 row)
 
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                  1000 |            10000 |                 7 | pglz
 (1 row)
 
 SELECT alter_columnar_table_reset('table_options', compression_level => true);
- alter_columnar_table_reset
----------------------------------------------------------------------
-
+ alter_columnar_table_reset 
+----------------------------
+ 
 (1 row)
 
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                  1000 |            10000 |                11 | pglz
 (1 row)
 
@@ -213,8 +213,8 @@ SET columnar.compression_level TO 13;
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                  1000 |            10000 |                11 | pglz
 (1 row)
 
@@ -224,16 +224,16 @@ SELECT alter_columnar_table_reset(
     stripe_row_limit => true,
     compression => true,
     compression_level => true);
- alter_columnar_table_reset
----------------------------------------------------------------------
-
+ alter_columnar_table_reset 
+----------------------------
+ 
 (1 row)
 
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
-   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+   regclass    | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+---------------+-----------------------+------------------+-------------------+-------------
  table_options |                 10000 |           100000 |                13 | none
 (1 row)
 
@@ -275,8 +275,8 @@ INSERT INTO table_options VALUES (1);
 DROP TABLE table_options;
 -- we expect no entries in çstore.options for anything not found int pg_class
 SELECT * FROM columnar.options o WHERE o.regclass NOT IN (SELECT oid FROM pg_class);
- regclass | chunk_group_row_limit | stripe_row_limit | compression_level | compression
----------------------------------------------------------------------
+ regclass | chunk_group_row_limit | stripe_row_limit | compression_level | compression 
+----------+-----------------------+------------------+-------------------+-------------
 (0 rows)
 
 SET client_min_messages TO warning;

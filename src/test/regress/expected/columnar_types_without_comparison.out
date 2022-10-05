@@ -8,14 +8,14 @@
 CREATE TABLE test_varchar (a varchar) USING columnar;
 INSERT INTO test_varchar VALUES ('Hello');
 SELECT minimum_value, maximum_value FROM columnar.chunk;
- minimum_value | maximum_value
----------------------------------------------------------------------
-               |
+ minimum_value | maximum_value 
+---------------+---------------
+               | 
 (1 row)
 
 SELECT * FROM test_varchar WHERE a = 'Hello';
-   a
----------------------------------------------------------------------
+   a   
+-------
  Hello
 (1 row)
 
@@ -24,14 +24,14 @@ DROP TABLE test_varchar;
 CREATE TABLE test_cidr (a cidr) USING columnar;
 INSERT INTO test_cidr VALUES ('192.168.100.128/25');
 SELECT minimum_value, maximum_value FROM columnar.chunk;
- minimum_value | maximum_value
----------------------------------------------------------------------
-               |
+ minimum_value | maximum_value 
+---------------+---------------
+               | 
 (1 row)
 
 SELECT * FROM test_cidr WHERE a = '192.168.100.128/25';
-         a
----------------------------------------------------------------------
+         a          
+--------------------
  192.168.100.128/25
 (1 row)
 
@@ -40,14 +40,14 @@ DROP TABLE test_cidr;
 CREATE TABLE test_json (a json) USING columnar;
 INSERT INTO test_json VALUES ('5'::json);
 SELECT minimum_value, maximum_value FROM columnar.chunk;
- minimum_value | maximum_value
----------------------------------------------------------------------
-               |
+ minimum_value | maximum_value 
+---------------+---------------
+               | 
 (1 row)
 
 SELECT * FROM test_json WHERE a::text = '5'::json::text;
- a
----------------------------------------------------------------------
+ a 
+---
  5
 (1 row)
 
@@ -56,14 +56,14 @@ DROP TABLE test_json;
 CREATE TABLE test_line (a line) USING columnar;
 INSERT INTO test_line VALUES ('{1, 2, 3}');
 SELECT minimum_value, maximum_value FROM columnar.chunk;
- minimum_value | maximum_value
----------------------------------------------------------------------
-               |
+ minimum_value | maximum_value 
+---------------+---------------
+               | 
 (1 row)
 
 SELECT * FROM test_line WHERE a = '{1, 2, 3}';
-    a
----------------------------------------------------------------------
+    a    
+---------
  {1,2,3}
 (1 row)
 
@@ -72,14 +72,14 @@ DROP TABLE test_line;
 CREATE TABLE test_lseg (a lseg) USING columnar;
 INSERT INTO test_lseg VALUES ('( 1 , 2 ) , ( 3 , 4 )');
 SELECT minimum_value, maximum_value FROM columnar.chunk;
- minimum_value | maximum_value
----------------------------------------------------------------------
-              |
+ minimum_value | maximum_value 
+---------------+---------------
+               | 
 (1 row)
 
 SELECT * FROM test_lseg WHERE a = '( 1 , 2 ) , ( 3 , 4 )';
-       a
----------------------------------------------------------------------
+       a       
+---------------
  [(1,2),(3,4)]
 (1 row)
 
@@ -88,14 +88,14 @@ DROP TABLE test_lseg;
 CREATE TABLE test_path (a path) USING columnar;
 INSERT INTO test_path VALUES ('( 1 , 2 ) , ( 3 , 4 ) , ( 5 , 6 )');
 SELECT minimum_value, maximum_value FROM columnar.chunk;
- minimum_value | maximum_value
----------------------------------------------------------------------
-               |
+ minimum_value | maximum_value 
+---------------+---------------
+               | 
 (1 row)
 
 SELECT * FROM test_path WHERE a = '( 1 , 2 ) , ( 3 , 4 ) , ( 5 , 6 )';
-          a
----------------------------------------------------------------------
+          a          
+---------------------
  ((1,2),(3,4),(5,6))
 (1 row)
 
@@ -104,14 +104,14 @@ DROP TABLE test_path;
 CREATE TABLE test_txid_snapshot (a txid_snapshot) USING columnar;
 INSERT INTO test_txid_snapshot VALUES ('10:20:10,14,15');
 SELECT minimum_value, maximum_value FROM columnar.chunk;
- minimum_value | maximum_value
----------------------------------------------------------------------
-               |
+ minimum_value | maximum_value 
+---------------+---------------
+               | 
 (1 row)
 
 SELECT * FROM test_txid_snapshot WHERE a::text = '10:20:10,14,15'::txid_snapshot::text;
-       a
----------------------------------------------------------------------
+       a        
+----------------
  10:20:10,14,15
 (1 row)
 
@@ -120,14 +120,14 @@ DROP TABLE test_txid_snapshot;
 CREATE TABLE test_xml (a xml) USING columnar;
 INSERT INTO test_xml VALUES ('<foo>bar</foo>'::xml);
 SELECT minimum_value, maximum_value FROM columnar.chunk;
- minimum_value | maximum_value
----------------------------------------------------------------------
-               |
+ minimum_value | maximum_value 
+---------------+---------------
+               | 
 (1 row)
 
 SELECT * FROM test_xml WHERE a::text = '<foo>bar</foo>'::xml::text;
-       a
----------------------------------------------------------------------
+       a        
+----------------
  <foo>bar</foo>
 (1 row)
 
@@ -138,14 +138,14 @@ CREATE TYPE user_defined_color AS ENUM ('red', 'orange', 'yellow',
 CREATE TABLE test_user_defined_color (a user_defined_color) USING columnar;
 INSERT INTO test_user_defined_color VALUES ('red');
 SELECT minimum_value, maximum_value FROM columnar.chunk;
- minimum_value | maximum_value
----------------------------------------------------------------------
-               |
+ minimum_value | maximum_value 
+---------------+---------------
+               | 
 (1 row)
 
 SELECT * FROM test_user_defined_color WHERE a = 'red';
-  a
----------------------------------------------------------------------
+  a  
+-----
  red
 (1 row)
 
@@ -162,14 +162,14 @@ SELECT substring(:'server_version', '\d+')::int > 12 AS server_version_above_twe
 CREATE TABLE test_pg_snapshot (a pg_snapshot) USING columnar;
 INSERT INTO test_pg_snapshot VALUES ('10:20:10,14,15');
 SELECT minimum_value, maximum_value FROM columnar.chunk;
- minimum_value | maximum_value
----------------------------------------------------------------------
-               |
+ minimum_value | maximum_value 
+---------------+---------------
+               | 
 (1 row)
 
 SELECT * FROM test_pg_snapshot WHERE a::text = '10:20:10,14,15'::pg_snapshot::text;
-       a
----------------------------------------------------------------------
+       a        
+----------------
  10:20:10,14,15
 (1 row)
 

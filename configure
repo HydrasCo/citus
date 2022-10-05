@@ -2441,7 +2441,7 @@ _ACEOF
 
 
 # CITUS_EXTENSIONVERSION definition
-CITUS_EXTENSIONVERSION="`grep '^default_version' $srcdir/src/backend/distributed/citus.control | cut -d\' -f2`"
+CITUS_EXTENSIONVERSION="`grep '^default_version' $srcdir/src/backend/columnar/columnar.control | cut -d\' -f2`"
 
 cat >>confdefs.h <<_ACEOF
 #define CITUS_EXTENSIONVERSION "$CITUS_EXTENSIONVERSION"

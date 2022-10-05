@@ -12,8 +12,8 @@ SELECT count(*)
 FROM users
 JOIN things ON (users.id = things.user_id)
 WHERE things.id > 290;
- count
----------------------------------------------------------------------
+ count 
+-------
     10
 (1 row)
 
@@ -23,8 +23,8 @@ SELECT count(*)
 FROM users
 JOIN things ON (users.id = things.user_id)
 WHERE things.id > 299990;
-                        QUERY PLAN
----------------------------------------------------------------------
+                        QUERY PLAN                         
+-----------------------------------------------------------
  Aggregate
    ->  Nested Loop
          Join Filter: (users.id = things.user_id)
@@ -42,8 +42,8 @@ FROM users u1
 JOIN users u2 ON (u1.id::text = u2.name)
 WHERE u2.id > 299990
 GROUP BY u1.id, u2.id;
-                        QUERY PLAN
----------------------------------------------------------------------
+                        QUERY PLAN                         
+-----------------------------------------------------------
  HashAggregate
    Group Key: u1.id, u2.id
    ->  Nested Loop

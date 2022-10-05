@@ -9,16 +9,16 @@ set columnar.enable_custom_scan = false;
 create table fallback_scan(i int) using columnar;
 -- large enough to test parallel_workers > 1
 select alter_columnar_table_set('fallback_scan', compression => 'none');
- alter_columnar_table_set
----------------------------------------------------------------------
-
+ alter_columnar_table_set 
+--------------------------
+ 
 (1 row)
 
 insert into fallback_scan select generate_series(1,150000);
 vacuum analyze fallback_scan;
 select count(*), min(i), max(i), avg(i) from fallback_scan;
- count  | min |  max   |        avg
----------------------------------------------------------------------
+ count  | min |  max   |        avg         
+--------+-----+--------+--------------------
  150000 |   1 | 150000 | 75000.500000000000
 (1 row)
 
@@ -32,15 +32,15 @@ set parallel_tuple_cost = 0;
 set max_parallel_workers = 4;
 set max_parallel_workers_per_gather = 4;
 explain (costs off) select count(*), min(i), max(i), avg(i) from fallback_scan;
-           QUERY PLAN
----------------------------------------------------------------------
+           QUERY PLAN            
+---------------------------------
  Aggregate
    ->  Seq Scan on fallback_scan
 (2 rows)
 
 select count(*), min(i), max(i), avg(i) from fallback_scan;
- count  | min |  max   |        avg
----------------------------------------------------------------------
+ count  | min |  max   |        avg         
+--------+-----+--------+--------------------
  150000 |   1 | 150000 | 75000.500000000000
 (1 row)
 

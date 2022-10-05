@@ -62,17 +62,6 @@ SELECT filtered_row_count('SELECT count(*) FROM test_chunk_filtering WHERE a BET
 set columnar.stripe_row_limit to default;
 set columnar.chunk_group_row_limit to default;
 
--- Verify that we are fine with collations which use a different alphabet order
-CREATE TABLE collation_chunk_filtering_test(A text collate "da_DK")
-    USING columnar;
-COPY collation_chunk_filtering_test FROM STDIN;
-A
-Å
-B
-\.
-
-SELECT * FROM collation_chunk_filtering_test WHERE A > 'B';
-
 CREATE TABLE simple_chunk_filtering(i int) USING COLUMNAR;
 INSERT INTO simple_chunk_filtering SELECT generate_series(0,234567);
 EXPLAIN (analyze on, costs off, timing off, summary off)

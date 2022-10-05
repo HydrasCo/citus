@@ -27,7 +27,7 @@
 #include "columnar/columnar.h"
 #include "columnar/columnar_storage.h"
 #include "columnar/columnar_version_compat.h"
-#include "distributed/listutils.h"
+#include "columnar/utils/listutils.h"
 
 #include <sys/stat.h>
 #include "access/heapam.h"

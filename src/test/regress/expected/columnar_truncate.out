@@ -4,8 +4,8 @@
 -- print whether we're using version > 10 to make version-specific tests clear
 SHOW server_version \gset
 SELECT substring(:'server_version', '\d+')::int > 10 AS version_above_ten;
- version_above_ten
----------------------------------------------------------------------
+ version_above_ten 
+-------------------
  t
 (1 row)
 
@@ -23,8 +23,8 @@ INSERT INTO columnar_truncate_test_compressed select a, a from generate_series(1
 set columnar.compression to default;
 -- query rows
 SELECT * FROM columnar_truncate_test;
- a  | b
----------------------------------------------------------------------
+ a  | b  
+----+----
   1 |  1
   2 |  2
   3 |  3
@@ -38,16 +38,16 @@ SELECT * FROM columnar_truncate_test;
 (10 rows)
 
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
- consistent
----------------------------------------------------------------------
+ consistent 
+------------
  t
 (1 row)
 
 select
   version_major, version_minor, reserved_stripe_id, reserved_row_number
   from columnar_test_helpers.columnar_storage_info('columnar_truncate_test');
- version_major | version_minor | reserved_stripe_id | reserved_row_number
----------------------------------------------------------------------
+ version_major | version_minor | reserved_stripe_id | reserved_row_number 
+---------------+---------------+--------------------+---------------------
              2 |             0 |                  2 |              150001
 (1 row)
 
@@ -55,44 +55,44 @@ TRUNCATE TABLE columnar_truncate_test;
 select
   version_major, version_minor, reserved_stripe_id, reserved_row_number
   from columnar_test_helpers.columnar_storage_info('columnar_truncate_test');
- version_major | version_minor | reserved_stripe_id | reserved_row_number
----------------------------------------------------------------------
+ version_major | version_minor | reserved_stripe_id | reserved_row_number 
+---------------+---------------+--------------------+---------------------
              2 |             0 |                  1 |                   1
 (1 row)
 
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
- consistent
----------------------------------------------------------------------
+ consistent 
+------------
  t
 (1 row)
 
 SELECT * FROM columnar_truncate_test;
- a | b
----------------------------------------------------------------------
+ a | b 
+---+---
 (0 rows)
 
 SELECT COUNT(*) from columnar_truncate_test;
- count
----------------------------------------------------------------------
+ count 
+-------
      0
 (1 row)
 
 SELECT count(*) FROM columnar_truncate_test_compressed;
- count
----------------------------------------------------------------------
+ count 
+-------
     20
 (1 row)
 
 TRUNCATE TABLE columnar_truncate_test_compressed;
 SELECT count(*) FROM columnar_truncate_test_compressed;
- count
----------------------------------------------------------------------
+ count 
+-------
      0
 (1 row)
 
 SELECT pg_relation_size('columnar_truncate_test_compressed');
- pg_relation_size
----------------------------------------------------------------------
+ pg_relation_size 
+------------------
             16384
 (1 row)
 
@@ -100,8 +100,8 @@ INSERT INTO columnar_truncate_test select a, a from generate_series(1, 10) a;
 INSERT INTO columnar_truncate_test_regular select a, a from generate_series(10, 20) a;
 INSERT INTO columnar_truncate_test_second select a, a from generate_series(20, 30) a;
 SELECT * from columnar_truncate_test;
- a  | b
----------------------------------------------------------------------
+ a  | b  
+----+----
   1 |  1
   2 |  2
   3 |  3
@@ -115,8 +115,8 @@ SELECT * from columnar_truncate_test;
 (10 rows)
 
 SELECT * from columnar_truncate_test_second;
- a  | b
----------------------------------------------------------------------
+ a  | b  
+----+----
  20 | 20
  21 | 21
  22 | 22
@@ -131,8 +131,8 @@ SELECT * from columnar_truncate_test_second;
 (11 rows)
 
 SELECT * from columnar_truncate_test_regular;
- a  | b
----------------------------------------------------------------------
+ a  | b  
+----+----
  10 | 10
  11 | 11
  12 | 12
@@ -147,8 +147,8 @@ SELECT * from columnar_truncate_test_regular;
 (11 rows)
 
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
- consistent
----------------------------------------------------------------------
+ consistent 
+------------
  t
 (1 row)
 
@@ -159,37 +159,37 @@ TRUNCATE TABLE columnar_truncate_test,
 			   columnar_truncate_test_second,
    			   columnar_truncate_test;
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
- consistent
----------------------------------------------------------------------
+ consistent 
+------------
  t
 (1 row)
 
 SELECT * from columnar_truncate_test;
- a | b
----------------------------------------------------------------------
+ a | b 
+---+---
 (0 rows)
 
 SELECT * from columnar_truncate_test_second;
- a | b
----------------------------------------------------------------------
+ a | b 
+---+---
 (0 rows)
 
 SELECT * from columnar_truncate_test_regular;
- a | b
----------------------------------------------------------------------
+ a | b 
+---+---
 (0 rows)
 
 -- test if truncate on empty table works
 TRUNCATE TABLE columnar_truncate_test;
 SELECT * from columnar_truncate_test;
- a | b
----------------------------------------------------------------------
+ a | b 
+---+---
 (0 rows)
 
 -- make sure TRUNATE deletes metadata for old relfilenode
 SELECT :columnar_data_files_before_truncate - count(distinct storage_id) FROM columnar.stripe;
- ?column?
----------------------------------------------------------------------
+ ?column? 
+----------
         0
 (1 row)
 
@@ -202,14 +202,14 @@ INSERT INTO columnar_same_transaction_truncate SELECT * FROM generate_series(20,
 COMMIT;
 -- should output "1" for the newly created relation
 SELECT count(distinct storage_id) - :columnar_data_files_before_truncate FROM columnar.stripe;
- ?column?
----------------------------------------------------------------------
+ ?column? 
+----------
         1
 (1 row)
 
 SELECT * FROM columnar_same_transaction_truncate;
- a
----------------------------------------------------------------------
+ a  
+----
  20
  21
  22
@@ -225,16 +225,16 @@ BEGIN
 END;$$
 LANGUAGE plpgsql;
 SELECT columnar_truncate_test_regular_func();
- columnar_truncate_test_regular_func
----------------------------------------------------------------------
-
+ columnar_truncate_test_regular_func 
+-------------------------------------
+ 
 (1 row)
 
 -- the cached plans are used stating from the second call
 SELECT columnar_truncate_test_regular_func();
- columnar_truncate_test_regular_func
----------------------------------------------------------------------
-
+ columnar_truncate_test_regular_func 
+-------------------------------------
+ 
 (1 row)
 
 DROP FUNCTION columnar_truncate_test_regular_func();
@@ -249,15 +249,15 @@ set columnar.compression = 'pglz';
 INSERT INTO truncate_schema.truncate_tbl SELECT generate_series(1, 100);
 set columnar.compression to default;
 SELECT COUNT(*) FROM truncate_schema.truncate_tbl;
- count
----------------------------------------------------------------------
+ count 
+-------
    100
 (1 row)
 
 TRUNCATE TABLE truncate_schema.truncate_tbl;
 SELECT COUNT(*) FROM truncate_schema.truncate_tbl;
- count
----------------------------------------------------------------------
+ count 
+-------
      0
 (1 row)
 
@@ -266,15 +266,11 @@ INSERT INTO truncate_schema.truncate_tbl SELECT generate_series(1, 100);
 set columnar.compression to default;
 -- create a user that can not truncate
 SELECT run_command_on_workers($$CREATE USER truncate_user;$$);
-      run_command_on_workers
----------------------------------------------------------------------
- (localhost,57637,t,"CREATE ROLE")
- (localhost,57638,t,"CREATE ROLE")
-(2 rows)
-
+ERROR:  function run_command_on_workers(unknown) does not exist
+LINE 1: SELECT run_command_on_workers($$CREATE USER truncate_user;$$...
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CREATE USER truncate_user;
-NOTICE:  not propagating CREATE ROLE/USER commands to worker nodes
-HINT:  Connect to worker nodes directly to manually create all necessary users and roles.
 GRANT USAGE ON SCHEMA truncate_schema TO truncate_user;
 GRANT SELECT ON TABLE truncate_schema.truncate_tbl TO truncate_user;
 REVOKE TRUNCATE ON TABLE truncate_schema.truncate_tbl FROM truncate_user;
@@ -282,16 +278,16 @@ SELECT current_user \gset
 \c - truncate_user
 -- verify truncate command fails and check number of rows
 SELECT count(*) FROM truncate_schema.truncate_tbl;
- count
----------------------------------------------------------------------
+ count 
+-------
    100
 (1 row)
 
 TRUNCATE TABLE truncate_schema.truncate_tbl;
 ERROR:  permission denied for table truncate_tbl
 SELECT count(*) FROM truncate_schema.truncate_tbl;
- count
----------------------------------------------------------------------
+ count 
+-------
    100
 (1 row)
 
@@ -301,22 +297,22 @@ GRANT TRUNCATE ON TABLE truncate_schema.truncate_tbl TO truncate_user;
 -- verify truncate_user can truncate now
 \c - truncate_user
 SELECT count(*) FROM truncate_schema.truncate_tbl;
- count
----------------------------------------------------------------------
+ count 
+-------
    100
 (1 row)
 
 TRUNCATE TABLE truncate_schema.truncate_tbl;
 SELECT count(*) FROM truncate_schema.truncate_tbl;
- count
----------------------------------------------------------------------
+ count 
+-------
      0
 (1 row)
 
 \c - :current_user
 SELECT * FROM columnar_test_helpers.chunk_group_consistency;
- consistent
----------------------------------------------------------------------
+ consistent 
+------------
  t
 (1 row)
 

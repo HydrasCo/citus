@@ -15,8 +15,8 @@ ALTER TABLE test_alter_table DROP COLUMN a;
 select
   version_major, version_minor, reserved_stripe_id, reserved_row_number
   from columnar_test_helpers.columnar_storage_info('test_alter_table');
- version_major | version_minor | reserved_stripe_id | reserved_row_number
----------------------------------------------------------------------
+ version_major | version_minor | reserved_stripe_id | reserved_row_number 
+---------------+---------------+--------------------+---------------------
              2 |             0 |                  2 |              150001
 (1 row)
 
@@ -24,8 +24,8 @@ select
 ANALYZE test_alter_table;
 -- verify select queries run as expected
 SELECT * FROM test_alter_table;
- b | c
----------------------------------------------------------------------
+ b | c 
+---+---
  2 | 3
  5 | 6
  8 | 9
@@ -33,9 +33,11 @@ SELECT * FROM test_alter_table;
 
 SELECT a FROM test_alter_table;
 ERROR:  column "a" does not exist
+LINE 1: SELECT a FROM test_alter_table;
+               ^
 SELECT b FROM test_alter_table;
- b
----------------------------------------------------------------------
+ b 
+---
  2
  5
  8
@@ -44,42 +46,44 @@ SELECT b FROM test_alter_table;
 -- verify insert runs as expected
 INSERT INTO test_alter_table (SELECT 3, 5, 8);
 ERROR:  INSERT has more expressions than target columns
+LINE 1: INSERT INTO test_alter_table (SELECT 3, 5, 8);
+                                                   ^
 INSERT INTO test_alter_table (SELECT 5, 8);
 -- add a column with no defaults
 ALTER TABLE test_alter_table ADD COLUMN d int;
 SELECT * FROM test_alter_table;
- b | c | d
----------------------------------------------------------------------
- 2 | 3 |
- 5 | 6 |
- 8 | 9 |
- 5 | 8 |
+ b | c | d 
+---+---+---
+ 2 | 3 |  
+ 5 | 6 |  
+ 8 | 9 |  
+ 5 | 8 |  
 (4 rows)
 
 INSERT INTO test_alter_table (SELECT 3, 5, 8);
 SELECT * FROM test_alter_table;
- b | c | d
----------------------------------------------------------------------
- 2 | 3 |
- 5 | 6 |
- 8 | 9 |
- 5 | 8 |
+ b | c | d 
+---+---+---
+ 2 | 3 |  
+ 5 | 6 |  
+ 8 | 9 |  
+ 5 | 8 |  
  3 | 5 | 8
 (5 rows)
 
 select
   version_major, version_minor, reserved_stripe_id, reserved_row_number
   from columnar_test_helpers.columnar_storage_info('test_alter_table');
- version_major | version_minor | reserved_stripe_id | reserved_row_number
----------------------------------------------------------------------
+ version_major | version_minor | reserved_stripe_id | reserved_row_number 
+---------------+---------------+--------------------+---------------------
              2 |             0 |                  4 |              450001
 (1 row)
 
 -- add a fixed-length column with default value
 ALTER TABLE test_alter_table ADD COLUMN e int default 3;
 SELECT * from test_alter_table;
- b | c | d | e
----------------------------------------------------------------------
+ b | c | d | e 
+---+---+---+---
  2 | 3 |   | 3
  5 | 6 |   | 3
  8 | 9 |   | 3
@@ -89,8 +93,8 @@ SELECT * from test_alter_table;
 
 INSERT INTO test_alter_table (SELECT 1, 2, 4, 8);
 SELECT * from test_alter_table;
- b | c | d | e
----------------------------------------------------------------------
+ b | c | d | e 
+---+---+---+---
  2 | 3 |   | 3
  5 | 6 |   | 3
  8 | 9 |   | 3
@@ -102,16 +106,16 @@ SELECT * from test_alter_table;
 select
   version_major, version_minor, reserved_stripe_id, reserved_row_number
   from columnar_test_helpers.columnar_storage_info('test_alter_table');
- version_major | version_minor | reserved_stripe_id | reserved_row_number
----------------------------------------------------------------------
+ version_major | version_minor | reserved_stripe_id | reserved_row_number 
+---------------+---------------+--------------------+---------------------
              2 |             0 |                  5 |              600001
 (1 row)
 
 -- add a variable-length column with default value
 ALTER TABLE test_alter_table ADD COLUMN f text DEFAULT 'TEXT ME';
 SELECT * from test_alter_table;
- b | c | d | e |    f
----------------------------------------------------------------------
+ b | c | d | e |    f    
+---+---+---+---+---------
  2 | 3 |   | 3 | TEXT ME
  5 | 6 |   | 3 | TEXT ME
  8 | 9 |   | 3 | TEXT ME
@@ -122,8 +126,8 @@ SELECT * from test_alter_table;
 
 INSERT INTO test_alter_table (SELECT 1, 2, 4, 8, 'ABCDEF');
 SELECT * from test_alter_table;
- b | c | d | e |    f
----------------------------------------------------------------------
+ b | c | d | e |    f    
+---+---+---+---+---------
  2 | 3 |   | 3 | TEXT ME
  5 | 6 |   | 3 | TEXT ME
  8 | 9 |   | 3 | TEXT ME
@@ -138,8 +142,8 @@ ALTER TABLE test_alter_table DROP COLUMN c;
 ALTER TABLE test_alter_table DROP COLUMN e;
 ANALYZE test_alter_table;
 SELECT * from test_alter_table;
- b | d |    f
----------------------------------------------------------------------
+ b | d |    f    
+---+---+---------
  2 |   | TEXT ME
  5 |   | TEXT ME
  8 |   | TEXT ME
@@ -150,14 +154,14 @@ SELECT * from test_alter_table;
 (7 rows)
 
 SELECT count(*) from test_alter_table;
- count
----------------------------------------------------------------------
+ count 
+-------
      7
 (1 row)
 
 SELECT count(t.*) from test_alter_table t;
- count
----------------------------------------------------------------------
+ count 
+-------
      7
 (1 row)
 
@@ -174,15 +178,15 @@ HINT:  Expression is either mutable or does not evaluate to constant value
 ALTER TABLE test_alter_table ALTER COLUMN h DROP DEFAULT;
 ANALYZE test_alter_table;
 SELECT * FROM test_alter_table;
- b | d |    f    | g | h
----------------------------------------------------------------------
- 2 |   | TEXT ME |   |
- 5 |   | TEXT ME |   |
- 8 |   | TEXT ME |   |
- 5 |   | TEXT ME |   |
- 3 | 8 | TEXT ME |   |
- 1 | 4 | TEXT ME |   |
- 1 | 4 | ABCDEF  |   |
+ b | d |    f    | g | h 
+---+---+---------+---+---
+ 2 |   | TEXT ME |   | 
+ 5 |   | TEXT ME |   | 
+ 8 |   | TEXT ME |   | 
+ 5 |   | TEXT ME |   | 
+ 3 | 8 | TEXT ME |   | 
+ 1 | 4 | TEXT ME |   | 
+ 1 | 4 | ABCDEF  |   | 
 (7 rows)
 
 -- unsupported type change
@@ -212,8 +216,8 @@ ERROR:  domain str_domain does not allow null values
 -- but this should succeed
 alter table domain_test add column c str_domain DEFAULT 'x';
 SELECT * FROM domain_test;
- a | b | c
----------------------------------------------------------------------
+ a | b | c 
+---+---+---
  1 | 2 | x
  1 | 2 | x
 (2 rows)
@@ -226,8 +230,8 @@ ROLLBACK;
 BEGIN;
   ALTER TABLE domain_test ADD COLUMN d SERIAL;
   SELECT * FROM domain_test ORDER BY 1,2,3,4;
- a | b | c | d
----------------------------------------------------------------------
+ a | b | c | d 
+---+---+---+---
  1 | 2 | x | 1
  1 | 2 | x | 2
 (2 rows)
@@ -238,8 +242,8 @@ CREATE TABLE has_volatile AS
 SELECT * FROM generate_series(1,10) id;
 ALTER TABLE has_volatile ADD col4 int DEFAULT (random() * 10000)::int;
 SELECT id, col4 < 10000 FROM has_volatile ORDER BY id;
- id | ?column?
----------------------------------------------------------------------
+ id | ?column? 
+----+----------
   1 | t
   2 | t
   3 | t
@@ -257,8 +261,8 @@ CREATE TABLE itest13 (a int) using columnar;
 INSERT INTO itest13 VALUES (1), (2), (3);
 ALTER TABLE itest13 ADD COLUMN c int GENERATED BY DEFAULT AS IDENTITY;
 SELECT * FROM itest13 ORDER BY a;
- a | c
----------------------------------------------------------------------
+ a | c 
+---+---
  1 | 1
  2 | 2
  3 | 3
@@ -275,8 +279,8 @@ create table test_gen_ex (x int) using columnar;
 INSERT INTO test_gen_ex VALUES (1), (2), (3);
 ALTER TABLE test_gen_ex ADD COLUMN y int generated always as (x+1) stored;
 SELECT * FROM test_gen_ex;
- x | y
----------------------------------------------------------------------
+ x | y 
+---+---
  1 | 2
  2 | 3
  3 | 4
@@ -298,14 +302,14 @@ SELECT * FROM zero_col_columnar;
 (2 rows)
 
 SELECT count(*) FROM zero_col_columnar;
- count
----------------------------------------------------------------------
+ count 
+-------
      2
 (1 row)
 
 EXPLAIN (costs off, summary off) SELECT * FROM zero_col_columnar;
-                             QUERY PLAN
----------------------------------------------------------------------
+                             QUERY PLAN                             
+--------------------------------------------------------------------
  Custom Scan (ColumnarScan) on zero_col_columnar
    Columnar Projected Columns: <columnar optimized out all columns>
 (2 rows)
@@ -318,26 +322,19 @@ SELECT * FROM zero_col_columnar;
 (5 rows)
 
 SELECT count(*) FROM zero_col_columnar;
- count
----------------------------------------------------------------------
+ count 
+-------
      5
 (1 row)
 
 EXPLAIN (costs off, summary off) SELECT * FROM zero_col_columnar;
-                             QUERY PLAN
----------------------------------------------------------------------
+                             QUERY PLAN                             
+--------------------------------------------------------------------
  Custom Scan (ColumnarScan) on zero_col_columnar
    Columnar Projected Columns: <columnar optimized out all columns>
 (2 rows)
 
-VACUUM VERBOSE zero_col_columnar;
-INFO:  statistics for "zero_col_columnar":
-storage id: xxxxx
-total file size: 16384, total data size: 0
-compression rate: 1.00x
-total row count: 5, stripe count: 4, average rows per stripe: 1
-chunk count: 0, containing data for dropped columns: 0
-
+VACUUM zero_col_columnar;
 ANALYZE zero_col_columnar;
 VACUUM FULL zero_col_columnar;
 SELECT * FROM zero_col_columnar;
@@ -364,14 +361,7 @@ SELECT * FROM zero_col_columnar;
 --
 (8 rows)
 
-VACUUM VERBOSE zero_col_columnar;
-INFO:  statistics for "zero_col_columnar":
-storage id: xxxxx
-total file size: 49152, total data size: 60
-compression rate: 0.40x
-total row count: 8, stripe count: 4, average rows per stripe: 2
-chunk count: 4, containing data for dropped columns: 4, zstd compressed: 4
-
+VACUUM zero_col_columnar;
 ANALYZE zero_col_columnar;
 VACUUM FULL zero_col_columnar;
 SELECT * FROM zero_col_columnar;
@@ -399,8 +389,8 @@ INSERT INTO products VALUES (2, 'shampoo', 20);
 ALTER TABLE products DROP CONSTRAINT dummy_constraint;
 INSERT INTO products VALUES (3, 'pen', 2);
 SELECT * FROM products ORDER BY 1;
- product_no |  name   | price
----------------------------------------------------------------------
+ product_no |  name   | price 
+------------+---------+-------
           1 | bread   |    10
           2 | shampoo |    20
           3 | pen     |     2
@@ -422,7 +412,7 @@ CREATE TABLE products_primary (
 BEGIN;
   ALTER TABLE products DROP COLUMN store_id;
   ALTER TABLE products ADD COLUMN store_id text PRIMARY KEY;
-ERROR:  column "store_id" contains null values
+ERROR:  column "store_id" of relation "products" contains null values
 ROLLBACK;
 -- Add an EXCLUSION constraint (should fail)
 CREATE TABLE circles (
@@ -433,34 +423,30 @@ ERROR:  unsupported access method for the index on columnar table circles
 -- Row level security
 CREATE TABLE public.row_level_security_col (id int, pgUser CHARACTER VARYING) USING columnar;
 CREATE USER user1;
-NOTICE:  not propagating CREATE ROLE/USER commands to worker nodes
-HINT:  Connect to worker nodes directly to manually create all necessary users and roles.
 CREATE USER user2;
-NOTICE:  not propagating CREATE ROLE/USER commands to worker nodes
-HINT:  Connect to worker nodes directly to manually create all necessary users and roles.
 INSERT INTO public.row_level_security_col VALUES (1, 'user1'), (2, 'user2');
 GRANT SELECT, UPDATE, INSERT, DELETE ON public.row_level_security_col TO user1;
 GRANT SELECT, UPDATE, INSERT, DELETE ON public.row_level_security_col TO user2;
 CREATE POLICY policy_col ON public.row_level_security_col FOR ALL TO PUBLIC USING (pgUser = current_user);
 ALTER TABLE public.row_level_security_col ENABLE ROW LEVEL SECURITY;
 SELECT * FROM public.row_level_security_col ORDER BY 1;
- id | pguser
----------------------------------------------------------------------
+ id | pguser 
+----+--------
   1 | user1
   2 | user2
 (2 rows)
 
 SET ROLE user1;
 SELECT * FROM public.row_level_security_col;
- id | pguser
----------------------------------------------------------------------
+ id | pguser 
+----+--------
   1 | user1
 (1 row)
 
 SET ROLE user2;
 SELECT * FROM public.row_level_security_col;
- id | pguser
----------------------------------------------------------------------
+ id | pguser 
+----+--------
   2 | user2
 (1 row)
 
