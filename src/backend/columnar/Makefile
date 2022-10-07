@@ -8,7 +8,7 @@ OBJS += \
 	$(patsubst $(citus_abs_srcdir)/%.c,%.o,$(foreach dir,$(SUBDIRS), $(sort $(wildcard $(citus_abs_srcdir)/$(dir)/*.c))))
 
 MODULE_big = columnar
-PG_CPPFLAGS += -I$(libpq_srcdir) -I$(safestringlib_srcdir)/include
+PG_CPPFLAGS += -I$(libpq_srcdir) -I$(safestringlib_srcdir)/include -I$(libpq_srcdir)/postgresql/server
 EXTENSION = columnar
 
 template_sql_files = $(patsubst $(citus_abs_srcdir)/%,%,$(wildcard $(citus_abs_srcdir)/sql/*.sql))
