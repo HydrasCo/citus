@@ -3,8 +3,8 @@
 -- For a proper mapping between tid & (stripe, row_num), add a new column to
 -- columnar.stripe and define a BTREE index on this column.
 -- Also include storage_id column for per-relation scans.
-ALTER TABLE columnar.stripe ADD COLUMN first_row_number bigint;
-CREATE INDEX stripe_first_row_number_idx ON columnar.stripe USING BTREE(storage_id, first_row_number);
+ALTER TABLE columnar.stripe ADD COLUMN IF NOT EXISTS first_row_number bigint;
+CREATE INDEX IF NOT EXISTS stripe_first_row_number_idx ON columnar.stripe USING BTREE(storage_id, first_row_number);
 
 -- Populate first_row_number column of columnar.stripe table.
 --

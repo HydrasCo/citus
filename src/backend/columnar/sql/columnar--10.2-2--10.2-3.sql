@@ -10,6 +10,7 @@
 --
 -- To do that, drop stripe_first_row_number_idx and create a unique
 -- constraint with the same name to keep the code change at minimum.
-DROP INDEX columnar.stripe_first_row_number_idx;
+DROP INDEX IF EXISTS columnar.stripe_first_row_number_idx;
+ALTER TABLE columnar.stripe DROP CONSTRAINT IF EXISTS stripe_first_row_number_idx;
 ALTER TABLE columnar.stripe ADD CONSTRAINT stripe_first_row_number_idx
 UNIQUE (storage_id, first_row_number);

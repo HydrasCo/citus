@@ -1,11 +1,11 @@
 -- columnar--9.5-1--10.0-1.sql
 
-CREATE SCHEMA columnar;
+CREATE SCHEMA IF NOT EXISTS columnar;
 SET search_path TO columnar;
 
-CREATE SEQUENCE storageid_seq MINVALUE 10000000000 NO CYCLE;
+CREATE SEQUENCE IF NOT EXISTS storageid_seq MINVALUE 10000000000 NO CYCLE;
 
-CREATE TABLE options (
+CREATE TABLE IF NOT EXISTS options (
     regclass regclass NOT NULL PRIMARY KEY,
     chunk_group_row_limit int NOT NULL,
     stripe_row_limit int NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE options (
 
 COMMENT ON TABLE options IS 'columnar table specific options, maintained by alter_columnar_table_set';
 
-CREATE TABLE stripe (
+CREATE TABLE IF NOT EXISTS stripe (
     storage_id bigint NOT NULL,
     stripe_num bigint NOT NULL,
     file_offset bigint NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE stripe (
 
 COMMENT ON TABLE stripe IS 'Columnar per stripe metadata';
 
-CREATE TABLE chunk_group (
+CREATE TABLE IF NOT EXISTS chunk_group (
     storage_id bigint NOT NULL,
     stripe_num bigint NOT NULL,
     chunk_group_num int NOT NULL,
@@ -40,7 +40,7 @@ CREATE TABLE chunk_group (
 
 COMMENT ON TABLE chunk_group IS 'Columnar chunk group metadata';
 
-CREATE TABLE chunk (
+CREATE TABLE IF NOT EXISTS chunk (
     storage_id bigint NOT NULL,
     stripe_num bigint NOT NULL,
     attr_num int NOT NULL,
