@@ -1,3 +1,5 @@
+DROP FUNCTION columnar.alter_table_set_access_method;
+
 CREATE OR REPLACE FUNCTION pg_catalog.alter_table_set_access_method(t TEXT, method TEXT)
   RETURNS BOOLEAN LANGUAGE plpgsql
 AS $func$

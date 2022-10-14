@@ -1,4 +1,8 @@
-CREATE OR REPLACE FUNCTION pg_catalog.alter_table_set_access_method(t TEXT, method TEXT)
+-- columnar--11.1-3--11.1-2.sql
+
+DROP FUNCTION pg_catalog.alter_table_set_access_method;
+
+CREATE OR REPLACE FUNCTION columnar.alter_table_set_access_method(t TEXT, method TEXT)
   RETURNS BOOLEAN LANGUAGE plpgsql
 AS $func$
 
@@ -203,5 +207,5 @@ END;
 
 $func$;
 
-COMMENT ON FUNCTION pg_catalog.alter_table_set_access_method(t text, method text)
+COMMENT ON FUNCTION columnar.alter_table_set_access_method(t text, method text)
   IS 'alters a table''s access method';
