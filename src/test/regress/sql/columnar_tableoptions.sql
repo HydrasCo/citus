@@ -85,24 +85,24 @@ SET columnar.compression_level TO 11;
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
 
-SELECT alter_columnar_table_reset('table_options', chunk_group_row_limit => true);
+SELECT columnar.alter_columnar_table_reset('table_options', chunk_group_row_limit => true);
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
 
-SELECT alter_columnar_table_reset('table_options', stripe_row_limit => true);
-
--- show table_options settings
-SELECT * FROM columnar.options
-WHERE regclass = 'table_options'::regclass;
-
-SELECT alter_columnar_table_reset('table_options', compression => true);
+SELECT columnar.alter_columnar_table_reset('table_options', stripe_row_limit => true);
 
 -- show table_options settings
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
 
-SELECT alter_columnar_table_reset('table_options', compression_level => true);
+SELECT columnar.alter_columnar_table_reset('table_options', compression => true);
+
+-- show table_options settings
+SELECT * FROM columnar.options
+WHERE regclass = 'table_options'::regclass;
+
+SELECT columnar.alter_columnar_table_reset('table_options', compression_level => true);
 
 -- show table_options settings
 SELECT * FROM columnar.options
@@ -118,7 +118,7 @@ SET columnar.compression_level TO 13;
 SELECT * FROM columnar.options
 WHERE regclass = 'table_options'::regclass;
 
-SELECT alter_columnar_table_reset(
+SELECT columnar.alter_columnar_table_reset(
     'table_options',
     chunk_group_row_limit => true,
     stripe_row_limit => true,
@@ -133,7 +133,7 @@ WHERE regclass = 'table_options'::regclass;
 -- first start with a table that is not a columnar table
 CREATE TABLE not_a_columnar_table (a int);
 SELECT columnar.alter_columnar_table_set('not_a_columnar_table', compression => 'pglz');
-SELECT alter_columnar_table_reset('not_a_columnar_table', compression => true);
+SELECT columnar.alter_columnar_table_reset('not_a_columnar_table', compression => true);
 
 -- verify you can't use a compression that is not known
 SELECT columnar.alter_columnar_table_set('table_options', compression => 'foobar');
